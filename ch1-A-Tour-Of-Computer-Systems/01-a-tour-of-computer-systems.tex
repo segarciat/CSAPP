@@ -1,0 +1,159 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=VHDL, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 1: A Tour of Computer Systems} \hfill 
+
+\noindent\today
+
+\subsection*{Practice Problems}
+\begin{ex}{1.1}
+	Suppose  you  work as a truck driver, and you have been hired to carry
+	a load of potatoes from Boise, Idaho, to Minneaopolis, Minnesota, a
+	total distance of 2,500 kilometers. You estimate you can average
+	100 km/hr driving within the speed limits, requiring a total of 25
+	hours for the trip.
+	\begin{enumerate}[label=(\alph*)]
+		\item You hear on the news that Montana has just abolished its
+		speed limit, which constitutes 1,500 km of the trip. Your
+		truck can travel at 150 km/hr. What will be your speedup
+		for the trip?
+		\item You can buy a new turbocharger for your truck at
+		www.fasttrucks.com. They stock a variety of models, but
+		the fast you go, the more it will cost. How fast must you travel
+		through Montana to get an overall speedup of your trip of $1.67\times$?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	Recall that Amdhal's Law says if part of a system takes a fraction
+	$\alpha$ of the overall time, and if we speed up by a factor of $k$,
+	then the overall system speedup is given by
+	\begin{align*}
+		S=\frac{1}{(1-\alpha)+\alpha/k},
+	\end{align*}
+	where $\alpha$ is the fraction of a system
+	\begin{enumerate}[label=(\alph*)]
+		\item The distance through Montana corresponds to a fraction
+		$\alpha=\frac{1500}{2500}=\frac{3}{5}$ of the overall trip.
+		During the Montana part, we travel at 150 km/hr, whereas we
+		travel at 100 km/hr for the rest of the trip, meaning that
+		our performance improve factor through Montana is
+		$k=\frac{150}{100}=\frac{3}{2}$. Therefore, the overall
+		speedup is
+		\begin{align*}
+			S&=\frac{1}{(1-\frac{3}{5})+\frac{3}{5}\cdot \frac{2}{3}}\\
+			&=\frac{1}{\frac{2}{5}+\frac{2}{5}}\\
+			&=\frac{5}{4}
+		\end{align*}
+		That is, the speedup for the trip is $1.25\times$.
+		\item To find the necessary speed of our track to obtain and
+		overall speedup of $S=1.67\times$, we use Amdhal's Law to find $k$:
+		\begin{align*}
+			S(1-\alpha)+\frac{\alpha S}{k}&=1\\
+			\frac{\alpha S}{k}&=1+S(\alpha-1)\\
+			k&=\frac{\alpha S}{1+S(\alpha -1)}
+		\end{align*}
+		Since $1.67\approx \frac{5}{3}$, we get
+		\begin{align*}
+			k&=\frac{\frac{3}{5}\cdot \frac{5}{3}}{1+\frac{5}{3}\left(\frac{3}{5}-1\right)}\\
+			&=\frac{1}{1-\frac{2}{3}}\\
+			&=3
+		\end{align*}
+		Hence, we would need to travel $100\text{ km/hr } \times 3=300\text{ km/hr}$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2}
+	The marketing department at your company has promised your customers that
+	the next software release will show a $2\times$ performance improvement.
+	You have been assigned the task of delivering on that promise. You have
+	determined that only $80\%$ of the system can be improved. How much (i.e,
+	what value of $k$) would you need to improve this part to meet the overall
+	performance target?
+\end{ex}
+
+\begin{sol}
+	After re-arranging Amdhal's Law in the previous question, the equation
+	for $k$ became
+	\begin{align*}
+		k&=\frac{\alpha S}{1+S(\alpha -1)}
+	\end{align*}
+	Given $S=2$ and $\alpha=0.8=\frac{4}{5}$, we find the required
+	performance improvement $k$:
+	\begin{align*}
+		k&=\frac{\frac{4}{5}\cdot 2}{1 + 2\left(\frac{4}{5}-1\right)}\\
+		&=\frac{\frac{8}{5}}{\frac{3}{5}}\\
+		&=\frac{8}{3}
+	\end{align*}
+	Hence, we need a performance improvement of about $2.67\times$.
+\end{sol}
+
+
+\end{document}

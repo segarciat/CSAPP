@@ -1,0 +1,1200 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 2: Representing and Manipulating Information} \hfill 
+
+\noindent\today
+
+\subsection*{Practice Problems}
+\begin{ex}{2.1}
+	Perform the following conversions:
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{0x39A7F8} to binary.
+		\item binary $1100100101111011$ to hexadecimal.
+		\item \texttt{0xD5E4C} to binary.
+		\item binary $1001101110011110110101$ to hexadecimal.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Each hexadecimal digit corresponds to a 4-bit binary number:
+		\begin{center}
+			\begin{tabular}{c|cccccc}
+				Hexadecimal & \texttt{3} & \texttt{9} & \texttt{A} & \texttt{7} & \texttt{F} & \texttt{8}\\
+				\hline
+				Binary & 0011 & 1001 & 1010 & 0111 & 1111 & 1000
+			\end{tabular}
+		\end{center}
+		When concatenated, we find that $\texttt{0x39A7F8}=0011 1001 1010 0111 1111 1000_2$.
+		\item We group the number into 4-bit groups:
+		\begin{center}
+			\begin{tabular}{c|cccc}
+				Binary      & 1100 & 1001 & 0111 & 1011\\
+				\hline
+				Hexadecimal & \texttt{C} &  \texttt{9} &  \texttt{7} &  \texttt{B}
+			\end{tabular}
+		\end{center}
+		Hence, $1100 1001 0111 1011_2=\texttt{0xC97B}$.
+		\item We tabulate the values:
+		\begin{center}
+			\begin{tabular}{c|ccccc}
+				Hexadecimal & \texttt{D} & \texttt{5} & \texttt{E} & \texttt{4} & \texttt{C} \\
+				\hline
+				Binary & 1101 & 0101 & 1110 & 0100 & 1100
+			\end{tabular}
+		\end{center}
+		Hence, $\texttt{0xD5E4C}=1101 0101 1110 0100 1100_2$.
+		\item The table is below:
+		\begin{center}
+			\begin{tabular}{c|cccccc}
+				10 0110 1110 0111 1011 0101
+				Binary      & 10 & 0110 & 1110 & 0111 & 1011 & 0101\\
+				\hline
+				Hexadecimal & \texttt{2} & \texttt{6} & \texttt{E} & \texttt{7} & \texttt{B} & \texttt{5}
+			\end{tabular}
+		\end{center}
+		Hence, $10 0110 1110 0111 1011 0101_2=\texttt{0x26E7B5}$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.2}
+	Fill in the blank entries in the following table, giving the decimal and
+	hexadecimal representations of different powers of $2$:
+	\begin{center}
+		\begin{tabular}{ccc}
+			$n$ & $2^n$ (decimal) & $2^n$ (hexadecimal)\\
+			\hline
+			9 & 512 & \texttt{0x200}\\
+			19 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & 16,384 & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \texttt{0x1000}\\
+			17 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & 32 & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \texttt{0x80}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	As per the text, we write $n=i+4j$, where $0\leq i\leq 3$. The
+	$i$ determines the leading hex bit to be $2^i$ (that is, 1, 2, 4, or 8).
+	The $j$ determines the number of hexadecimal 0s thereafter. Some
+	of the $n$ values from the table are below:
+	\begin{align*}
+		19&=3+4\cdot 4\\
+		14&=2+4\cdot 3\\
+		12&=0+4\cdot 3\\
+		17&=1+4\cdot 4\\
+		5 &=1+4\cdot 1\\
+		7 &=3+4\cdot 1.
+	\end{align*}
+	The filled-in table follows:
+	\begin{center}
+		\begin{tabular}{ccc}
+			$n$ & $2^n$ (decimal) & $2^n$ (hexadecimal)\\
+			\hline
+			9 & 512 & \texttt{0x200}\\
+			19 & \textbf{524,288} & \textbf{\texttt{0x80000}}\\
+			14 & 16,384 & \texttt{0x4000}\\
+			12 & 4096 & \texttt{0x1000}\\
+			17 & 131,072 & \texttt{0x20000}\\
+			5 & 32 & \texttt{0x20}\\
+			7 & 128 & \texttt{0x80}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.3}
+	A single byte can be represented by 2 hexadecimal digits. Fill in the missing
+	entries in the following table, giving the decimal, binary, and hexadecimal
+	values of different byte patterns.
+	\begin{center}
+		\begin{tabular}{ccc}
+			Decimal & Binary & Hexadecimal\\
+			\hline
+			0 & 0000 000 & \texttt{0x00}\\
+			167 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			62 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			188 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & 0011 0111 & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & 1000 1000 & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & 1111 0011 & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \texttt{0x52}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \texttt{0xAC}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \texttt{0xE7}		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	We proceed by repeatedly performing the division algorithm, taking each remainder:
+	\begin{align*}
+		167 &= 16\cdot 10 + 7\\
+		10 &= 16 \cdot 0 +10
+	\end{align*}
+	Since $10_{16}=\texttt{0xA}$, we have $167_{10}=\texttt{0xA7}$. We proceed
+	the same way:
+	\begin{align*}
+		62 &= 16 \cdot 3 + 14\\
+		3 &= 16 \cdot 0 + 3
+	\end{align*}
+	So $62_{10}=\texttt{0x3E}$.
+	\begin{align*}
+		188&=16\cdot 11 + 12\\
+		12 &=16\cdot 0 + 12
+	\end{align*}
+	So $188_{16}=\texttt{0xCC}$. By representing each hexadecimal digit with
+	4 bits and concatenating them, we get the binary representation. To convert
+	from hexadecimal to decimal, we multiply by the appropriate power of 16:
+	\begin{align*}
+		\texttt{0x37}&=3\cdot 16^1+7\cdot 16^0=55_{10}\\
+		\texttt{0x88}&=7\cdot 16^1+8\cdot 16^0=136_{10}\\
+		\texttt{0xF3}&=15\cdot16^1+3\cdot 16^0=243_{10}\\
+		\texttt{0x52}&=5\cdot 16^1+2\cdot 16^0=82_{10}\\
+		\texttt{0xAC}&=10\cdot16^1+12\cdot 16^0=172_{10}\\
+		\texttt{0xE7}&=14\cdot16^1+7\cdot 16^0=231_{10}
+	\end{align*}
+	
+	The complete table is below:
+	\begin{center}
+		\begin{tabular}{ccc}
+			Decimal & Binary & Hexadecimal\\
+			\hline
+			0 & 0000 000 & \texttt{0x00}\\
+			167 & 1010 0111& \texttt{0xA7}\\
+			62 & 0011 1110 & \texttt{0x3E}\\
+			188 & 1100 1100 & \texttt{0xCC}\\
+			55 & 0011 0111 & \texttt{0x37}\\
+			136 & 1000 1000 & \texttt{0x88}\\
+			243 & 1111 0011 & \texttt{0xF3}\\
+			82 & 0101 0010 & \texttt{0x52}\\
+			172 & 1010 1100 & \texttt{0xAC}\\
+			231 & 1110 0111 & \texttt{0xE7}	
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+
+\begin{ex}{2.4}
+	Without converting the numbers to decimal or binary, try to solve the following
+	arithmetic problems, giving the answers in hexadecimal. \emph{Hint}: Just
+	modify the methods you use for performing decimal addition and subtraction
+	to use base 16.
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{0x503c} + \texttt{0x8} = \makebox[1cm]{\hrulefill}
+		\item \texttt{0x503c} - \texttt{0x40} = \makebox[1cm]{\hrulefill}
+		\item \texttt{0x503c} + 64 = \makebox[1cm]{\hrulefill} 
+		\item \texttt{0x50ea} - \texttt{0x503c} = \makebox[1cm]{\hrulefill} 
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item 
+		\
+		\begin{center}
+			\begin{tabular}{ccccc}
+				{} & {}&{} & 1 & {}\\
+				0x & 5 & 0 & 3 & c\\
+				0x & {}& {}& 0 & 8\\
+				+ & {} & {} & {} & {} \\
+				\hline
+				0x & 5 & 0 & 4 & 4
+			\end{tabular}
+		\end{center}
+		\item
+		\
+		\begin{center}
+			\begin{tabular}{ccccc}
+				{} & 4 & F & {F3} & {}\\
+				0x & $\cancel{5}$ & $\cancel{0}$ & $\cancel{3}$ & c\\
+				0x & {}& {}& 4 & 0\\
+				- & {} & {} & {} & {} \\
+				\hline
+				0x & 4 & F & F & C
+			\end{tabular}
+		\end{center}
+		\item Note that $64_{10}=\texttt{0x40}$:
+		\begin{center}
+			\begin{tabular}{ccccc}
+				0x & 5 & 0 & 3 & c\\
+				0x & {}& {}& 4 & 0\\
+				+ & {} & {} & {} & {} \\
+				\hline
+				0x & 5 & 0 & 7 & c
+			\end{tabular}
+		\end{center}
+		\item
+		\
+		\begin{center}
+			\begin{tabular}{ccccc}
+				{} & {}&{} & D & FA\\
+				0x & 5 & 0 & $\cancel{e}$ & $\cancel{a}$\\
+				0x & 5 & 0 & 3 & c\\
+				- & {} & {} & {} & {} \\
+				\hline
+				0x & 0 & 0 & A & E
+			\end{tabular}
+		\end{center}
+	\end{enumerate}
+
+\end{sol}
+
+\begin{ex}{2.5}
+	Consider the following three calls to \texttt{show\_bytes}:
+\begin{lstlisting}
+int val = 0x87654321;
+byte_pointer valp = (byte_pointer) &val;
+show_bytes(valp, 1);  /* A. */
+show_bytes(valp, 2);  /* B. */
+show_bytes(valp, 3);  /* C. */
+\end{lstlisting}
+	Indicate the values that will be printed by each call on a little-endian
+	machine and on a big-endian machine.
+\end{ex}
+
+\begin{sol}
+	Recall \texttt{show\_bytes} function accepts an \texttt{unsigned char*} and
+	the size of the data type, which it uses to know how many bytes to read.
+	For example, we might pass \texttt{sizeof(int32\_t)}, which would pass
+	4 because an \texttt{int32\_t} takes up 32 bits, or 4 bytes. With
+	that out of the way:
+	\begin{enumerate}[label=(\alph*)]
+		\item The call with 1 means to take 1 byte, which on a little-endian will be
+		the least significant byte and on big-endian machine will be the most
+		significant byte. A byte is 8 bits, or two hexadecimal numbers. Hence,
+		the most least significant byte is \texttt{21}, and the most significant is
+		\texttt{87}.
+		\item On little-endian, it would be \texttt{21} \texttt{43}, and on
+		big-endian, it would be \texttt{87} \texttt{65}.
+		\item On a little-endian it's \texttt{21} \texttt{43} \texttt{65}, and
+		on big-endian it's \texttt{87} \texttt{65} \texttt{43}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.6}
+	Using \texttt{show\_int} and \texttt{show\_float}, we determine that the integer
+	3510593 has hexadecimal representation \texttt{0x00359141}, while the
+	floating-point number 3510593.0 has hexadecimal representation \texttt{0x4A564504}.
+	\begin{enumerate}[label=(\alph*)]
+		\item Write the binary representations of these two hexadecimal values.
+		\item Shift these two strings relative to one another to maximize the number of
+		matching bits. How many bits match?
+		\item What parts of the strings do not match?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}
+		\item \
+		\begin{center}
+			\begin{tabular}{c|c}
+				Hexadecimal & Binary\\
+				\hline
+				\texttt{0x00359141} &  0000 0000 0011 0011 0101 0001 0100 0001\\
+				\texttt{0x4A564504} & 0100 1010 0101 0110 0100 0101 0000 0100
+			\end{tabular}
+		\end{center}
+		\item The shifted numbers are shown below, with the 21 matching bits shown in
+		bold:
+		\begin{align*}
+					00000000001 &\textbf{101011001000101000001}\\
+	        		  010010100 &\textbf{101011001000101000001}00
+		\end{align*}
+		\item The last two bits in the float do not match. Also, the leading bits
+		in integer, $00000000001$, do not match the leading bits in the float:
+		$010010100$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.7}
+	What would be printed as a result of the following call to \texttt{show\_bytes}?
+	\begin{lstlisting}
+const char *s = "abcdef";
+show_bytes((byte_pointer) s, strlen(s));
+	\end{lstlisting}
+	Note that letters `\texttt{a}' through `\texttt{z}' have ASCII codes \texttt{0x61}
+	through \texttt{0x7A}.
+\end{ex}
+
+\begin{sol}
+	The output for the lowercase characters would be: \texttt{0x61 0x62 0x63 0x64 0x65 0x66 0x00}
+	on any system using ASCII as its character code. The \texttt{0x00} is the null character
+	used to terminate strings in C.
+\end{sol}
+
+\begin{ex}{2.8}
+	Fill in the following table showing the results of evaluating Boolean operations on
+	bit vectors.
+	\begin{center}
+		\begin{tabular}{cc}
+			Operationg & Result\\
+			\hline
+			$a$ & [01101001]\\
+			$b$ & [01010101]\\
+			$\sim a$ & \makebox[1cm]{\hrulefill} \\
+			$\sim b$ & \makebox[1cm]{\hrulefill} \\
+			$a\, \& \,b$ & \makebox[1cm]{\hrulefill} \\
+			$a \, | \, b$ & \makebox[1cm]{\hrulefill} \\
+			$a ^\wedge b $ & \makebox[1cm]{\hrulefill} 
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	Treating the bit sequences as bit vectors and noting that $\sim$ is logical NOT,
+	$\&$ is logical AND, $|$ is logical OR, and $^\wedge$ is logical XOR, we get:
+	\begin{center}
+		\begin{tabular}{cc}
+			Operationg & Result\\
+			\hline
+			$a$ & [01101001]\\
+			$b$ & [01010101]\\
+			$\sim a$ & [10010110] \\
+			$\sim b$ & [10101010] \\
+			$a\, \& \,b$ & [01000001] \\
+			$a \, | \, b$ & [01111101] \\
+			$a ^\wedge b $ & [00111100]
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.9}
+	Computers generate color pictures on a video screen or liquid crystal display by
+	mixing three different colors of light: red, green, and blue. Imagine a simple
+	scheme, with three different lights, each of which can be turned on or off,
+	projecting onto a glass screen.
+	\
+	We can then create eight different colors based on the absence (0) or presence (1)
+	of light sources $R$, $G$, and $B$:
+	\begin{center}
+		\begin{tabular}{cccc}
+			$R$ & $G$ & $B$ & Color\\
+			\hline
+			0 & 0 & 0 & Black\\
+			0 & 0 & 1 & Blue \\
+			0 & 1 & 0 & Green\\
+			0 & 1 & 1 & Cyan \\
+			1 & 0 & 0 & Red \\
+			1 & 0 & 1 & Magenta\\
+			1 & 1 & 0 & Yellow\\
+			1 & 1 & 1 & White
+		\end{tabular}
+	\end{center}
+	Each of these colors can be represented as a bit vector of length 3, and we can
+	apply Boolean operations to them.
+	\begin{enumerate}[label=(\alph*)]
+		\item The complement of a color is formed by turning off the lights that are
+		on and turning on the lights that are off. What would be the complement of
+		each of the eight colors listed above?
+		\item Describe the effect of applying Boolean operations on the following
+		colors:
+		\begin{center}
+			Blue $|$ Green = \makebox[1cm]{\hrulefill} \\
+			Yellow \& Cyan = \makebox[1cm]{\hrulefill} \\
+			Red $^\wedge$ Magenta = \makebox[1cm]{\hrulefill} 
+		\end{center}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\begin{enumerate}[label=(\alph*)]
+		\item The augmented table below shows the complementary colors, obtained by applying
+		the logical NOT operation $\sim$ to each bit vector:
+		\begin{center}
+			\begin{tabular}{ccccc}
+				$R$ & $G$ & $B$ & Color & Complement\\
+				\hline
+				0 & 0 & 0 & Black & White\\
+				0 & 0 & 1 & Blue & Yellow \\
+				0 & 1 & 0 & Green & Magenta\\
+				0 & 1 & 1 & Cyan  & Red  \\
+				1 & 0 & 0 & Red & Cyan \\
+				1 & 0 & 1 & Magenta & Green\\
+				1 & 1 & 0 & Yellow & Blue\\
+				1 & 1 & 1 & White & Black
+			\end{tabular}
+		\end{center}
+		\item Blue $|$ Green means we apply the logical OR operation to their corresponding bit
+		vectors. We get 001 | 010 = 011, which is Cyan. Yellow \& Cyan means we apply the logical
+		AND operator to the bit vectors, so 110 \& 011 = 010, which is Green. Finally,
+		Red $^\wedge$ Magenta means apply logical XOR to the bit vectors, so 100 $^\wedge$ 101 = 001,
+		which is Blue, so
+		\begin{center}
+			Blue $|$ Green = Cyan \\
+			Yellow \& Cyan = Green \\
+			Red $^\wedge$ Magenta = Blue
+		\end{center}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{10}
+	As an application of the property that $a ^\wedge a=0$ for any bit vector $a$, consider
+	the following program:
+	\begin{lstlisting}
+void inplace_swap(int *x, int *y) {
+   	*y = *x ^ *y;    /* Step 1 */
+   	*x = *x ^ *y;    /* Step 2 */
+   	*y = *x ^ *y;    /* Step 3 */
+}
+	\end{lstlisting}
+	As the name suggests, we claim that the effect of this procedure is to swap the values
+	stored at the locations denoted by pointer variables \texttt{x} and \texttt{y}. Note
+	that unlike the usual technique for swapping two values, we do not need a third location
+	to temporarily store one value while we are moving the other. There is no performance
+	advantage to this way of swapping; it is merely an intellectual amusement.
+	\
+	
+	\noindent Staring with values $a$ and $b$ in the locations pointed to by \texttt{x} and
+	\texttt{y}, respectively, fill int he table that follows, giving the values stored at the
+	two locations after each step of the procedure. Use the properties of $^\wedge$ to
+	show that the desired effect is achieved. Recall that every element is its own additive
+	inverse (that is, $a^\wedge a=0$).
+	\begin{center}
+		\begin{tabular}{ccc}
+			Step & \texttt{*x} & \texttt{*y}\\
+			\hline
+			Initially & $a$ & $b$ \\
+			Step 1 & \makebox[1cm]{\hrulefill}  & \makebox[1cm]{\hrulefill} \\
+			Step 2 & \makebox[1cm]{\hrulefill}  & \makebox[1cm]{\hrulefill} \\
+			Step 3 & \makebox[1cm]{\hrulefill}  & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	The completed table is below:
+	
+	\begin{center}
+		\begin{tabular}{ccc}
+			Step & \texttt{*x} & \texttt{*y}\\
+			\hline
+			Initially & $a$ & $b$ \\
+			Step 1 & $a$  & $a ^\wedge b$ \\
+			Step 2 & $a ^\wedge (a^\wedge b)$ & $a ^\wedge b$ \\
+			Step 3 &  $a ^\wedge (a^\wedge b)$  & $[a ^\wedge (a^\wedge b)] ^\wedge [a ^\wedge b]$
+		\end{tabular}
+	\end{center}
+	Since $a ^\wedge (a^\wedge b)=(a^\wedge a)\wedge b=0^\wedge b=b$, the table evaluates
+	correctly.
+\end{sol}
+
+\begin{ex}{2.11}
+	Armed with the function \texttt{inplace\_swap} from Problem 2.10, you decide to write
+	code that will reverse the elements of an array by swapping from opposite ends of the
+	array, working toward the middle:
+	\begin{lstlisting}
+void reverse_array(int a[], int cnt) {
+	int first, last;
+	for (first = 0, last = cnt-1;
+	     first <= last;
+	     first++, last--)
+	     inplace_swap(&a[first], &a[last]);
+}
+	\end{lstlisting}
+	When you apply your function to an array containing elements $1$, $2$, $3$, and $4$,
+	you find that the array now has, as expected, elements $4$, $3$, $2$, and $1$. When
+	you try it on an array with elements $1$, $2$, $3$, $4$, and $5$, however, you are
+	surprised to see that the array now has elements $5$, $4$, $0$, $2$, and $1$. In
+	fact, you discover that the code always works on arrays of even length, but it sets
+	the middle element to 0 whenever the array has odd length.
+	\begin{enumerate}[label=(\alph*)]
+		\item For an array of odd length $\texttt{cnt}=2k+1$, what are the values of
+		variables $\texttt{first}$ and $\texttt{last}$ in the final iteration of
+		function \texttt{reverse\_array}?
+		\item Why does this call to function \texttt{inplace\_swap} set the array element
+		to 0?
+		\item What simple modification to the code for \texttt{reverse\_array} would
+		eliminate this problem?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Their values are the same, and their value is the one at
+		the center of the array, namely, \texttt{a[cnt / 2]}.
+		\item The XOR operation operates on the same number, and
+		since every element is its own additive inverse with respect to
+		this operation, the result is 0.
+		\item Replace the comparison \texttt{first <= last} with
+		\texttt{first < last}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.12}
+	Write C expressions, in terms of variable \texttt{x}, for the following values.
+	Your code should work for any size $w\geq 8$. For reference, we show the result
+	of evaluating the the expressions for \texttt{x = 0x87654321}, with $w=32$.
+	\begin{enumerate}[label=(\alph*)]
+		\item The least significant byte of \texttt{x}, with all other bits set
+		to $0$. [\texttt{0x00000021}].
+		\item All but the least significant byte of \texttt{x} complemented, with
+		the least significant byte left unchanged. [\texttt{0x789ABC21}]
+		\item The least significant byte set to all ones, and all other bytes
+		of \texttt{x} left unchanged. [\texttt{0x876543FF}]
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{x \& 0xFF}
+		\item  The expression is: \texttt{(x \& 0xFF) | (\~{}x \& \~{}0xFF)}. First,
+		we use the \texttt{0xFF} mask to get the first byte of $x$. Then, we complement
+		\texttt{x}, but mask with \texttt{\~{}0xFF} instead to get all bits except
+		the last byte.
+		\item The expression is: \texttt{x |{}0xFF}. By using the logical OR, we
+		ensure the least significant byte is set to all 1s. The upper bytes are
+		0, so they do not change. what's in \texttt{x}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.13}
+	The Digital Equipment VAX computer was a very popular machine from the late 1970s until
+	the late 1980s. Rather than instructions for Boolean operations AND and OR, it had
+	instructions \texttt{bis} (bit set) and \texttt{bic} (bit clear). Both instructions
+	take a data word \texttt{x} and a mask word \texttt{m}. They generate a result
+	\texttt{z} consisting of the bits of \texttt{x} modified according to the bits of
+	\texttt{m}. With \texttt{bis}, the modification involves setting \texttt{z} to 1
+	at each position where \texttt{m} is 1. With \texttt{bic}, the modification involves
+	setting \texttt{z} to 0 at each bit position where \texttt{m} is 1.
+	
+	\
+	To see how these operations relate to C bit-level operations, assume we have functions
+	\texttt{bis} and \texttt{bis} implementing the bit set and bit clear operations, and
+	that we want to use these to implement functions computing bitwise operations \texttt{|}
+	and \texttt{\^}. Fill in the missing code below. Write C expressions for the operations
+	\texttt{bis} and \texttt{bic}.
+	
+	\begin{lstlisting}
+/* Declarations of functions implementing operatings bis and bic */
+int bis(int x, int m);
+int bic(int x, int m);
+
+/* Compute x|y using only calls to fucntions bis and bic */
+int bool_or(int x, int y) {
+	int result = __________;
+	return result;
+}
+
+/* Compute x^y using only calls to functions bis and bic */
+int bool_xor(int x, int y) {
+	int result = ___________;
+	return result;
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	For the OR operation, suppose we start with $x$. The expression \texttt{bis(x, 0)} is
+	equivalent to \texttt{x}. This is because 0 does not have any 1 bits. If \texttt{x} has
+	1 bits, they remain 1; if they're 0, they remain 0. On the other hand, if
+	\texttt{y} had all 1 bits, then \texttt{bit(x, y)} will be all 1 bits, regardless of what
+	was in \texttt{x}. This suggests the correct way to implement \texttt{x} OR \texttt{y}
+	is with \texttt{bis(x,y)}:
+	\begin{enumerate}
+		\item If the $i$-th bit of \texttt{x} is 1, then the result is 1 regardless
+		of the value of the $i$-th bit of \texttt{y}.
+		\item  If the $i$-th bit of \texttt{x} is 0, then the result is only 1 if the
+		$i$-th bit of \texttt{y} is 1.
+	\end{enumerate}
+	Consider a truth table for the \texttt{bic(x, y)} operation:
+	\begin{center}
+		\begin{tabular}{cc|c}
+			\texttt{x} & \texttt{y} & \texttt{bic(x, y)}\\
+			\hline
+			0 & 0 & 0 \\
+			0 & 1 & 0 \\
+			1 & 0 & 1 \\
+			1 & 1 & 0 
+		\end{tabular}
+	\end{center}
+	Note that if \texttt{x} is 0, then the result is 0. We could flip the inputs and get:
+	\begin{center}
+		\begin{tabular}{cc|c}
+			\texttt{y} & \texttt{x} & \texttt{bic(y, x)}\\
+			\hline
+			0 & 0 & 0 \\
+			0 & 1 & 0 \\
+			1 & 0 & 1 \\
+			1 & 1 & 0 
+		\end{tabular}
+	\end{center}
+	Therefore, the $i$-th bit of \texttt{bic(x, y)} will be 1 only if the
+	$i$-th bit of \texttt{x} is 1 and the $i$-th bit of \texttt{y} is 0.
+	The opposite is true for \texttt{bic(y, x)}. We therefore get \texttt{x \^{} y}
+	by applying the OR operation (which is just \texttt{bis}):
+	\begin{lstlisting}
+/* Declarations of functions implementing operatings bis and bic */
+int bis(int x, int m);
+int bic(int x, int m);
+
+/* Compute x|y using only calls to fucntions bis and bic */
+int bool_or(int x, int y) {
+	int result = bis(x, y);
+	return result;
+}
+
+/* Compute x^y using only calls to functions bis and bic */
+int bool_xor(int x, int y) {
+	int result = bis(bic(x, y), bic(y, x));
+	return result;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{2.14}
+	Suppose that \texttt{x} and \texttt{y} have byte values \texttt{0x66} and
+	\texttt{0x39}, respectively. Fill in the following table indicating the byte
+	values of the different C expressions:
+	\begin{center}
+		\begin{tabular}{cc|cc}
+			Expression & Value & Expression & Value\\
+			\hline
+			\texttt{x \& y} & \makebox[1cm]{\hrulefill} & \texttt{x \&\& y} & \makebox[1cm]{\hrulefill}\\
+			\texttt{x | y} & \makebox[1cm]{\hrulefill} & \texttt{x || y} & \makebox[1cm]{\hrulefill}\\
+			\texttt{\~{} x | \~{}y} & \makebox[1cm]{\hrulefill} & \texttt{!x || !y} & \makebox[1cm]{\hrulefill}\\
+			\texttt{x \& !y} & \makebox[1cm]{\hrulefill} & \texttt{x \&\& \~{}y} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	Note that \texttt{x = 0x66 = 0110 0110} and \texttt{y = 0x39 = 0011 1001}. Also
+	\texttt{\~{}x = 1001 1001} and \texttt{\~{}y = 1100 0110}.
+	\begin{center}
+	
+		\begin{tabular}{cc|cc}
+			Expression & Value & Expression & Value\\
+			\hline
+			\texttt{x \& y} & \texttt{0010 0000} & \texttt{x \&\& y} & \texttt{0x01}\\
+			\texttt{x | y} & \texttt{0111 1111} & \texttt{x || y} & \texttt{0x01}\\
+			\texttt{\~{}x | \~{}y} & \texttt{1101 1111} & \texttt{!x || !y} & \texttt{0x00}\\
+			\texttt{x \& !y} & \texttt{0100 0110} & \texttt{x \&\& \~{}y} & \texttt{0x01}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.15}
+	Using only bit-level and logical operations, write a C expression that is equivalent
+	to \texttt{x == y}. That is, it will return 1 when \texttt{x} and \texttt{y} are equal
+	and 0 otherwise.
+\end{ex}
+
+\begin{sol}
+	We can use \texttt{!(x \& \~{}y)}. Suppose \texttt{x} and \texttt{y} are the same;
+	then \texttt{x \& \~{}y} is 0, so the logical NOT operator \texttt{!} makes the result
+	1. Now suppose they're different, say, they're $i$-th bit is different. Then
+	the $i$-th bit of \texttt{x} \& \texttt{\~{}y} is the same, so \texttt{x \& \~{}y} is
+	nonzero, which means that applying logical NOT gives a value of 0.
+\end{sol}
+
+\begin{ex}{2.16}
+	Fill in the table below showing the effects of the different shift operations on
+	single-byte quantities. The best way to think about shift operations is to work
+	with binary representations. Convert the initial values to binary, perform the
+	shifts, and then convert back to hexadecimal. Each of the answers should be 8
+	binary digits or 2 hexadecimal digits.
+	\begin{center}
+		\begin{tabular}{c|cccc}
+			\texttt{x} & \texttt{0xC3} & \texttt{0x75} & \texttt{0x87} & \texttt{0x66} \\
+			\hline
+			\texttt{x << 3} \\
+			\texttt{x >> 2} (Logical) \\
+			\texttt{x >> 2} (Arithmetic)
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	We begin by converting each hexadecimal to binary:
+	\begin{align*}
+		\texttt{0xC3} &= \texttt{1100 0011}\\
+		\texttt{0x75} &= \texttt{0111 0101}\\
+		\texttt{0x87} &= \texttt{1000 0111}\\
+		\texttt{0x66} &= \texttt{0110 0110}
+	\end{align*}
+	From here, shifts are easy:
+	\begin{center}
+		\begin{tabular}{c|cccc}
+			\texttt{x} (Hex) & \texttt{0xC3} & \texttt{0x75} & \texttt{0x87} & \texttt{0x66} \\
+			\texttt{x} (Binary) & \texttt{1100 0011} & \texttt{0111 0101} & \texttt{1000 0111} & \texttt{0110 0110} \\
+			\hline
+			\texttt{x << 3} (Hex) & \texttt{0x18} & \texttt{0xA8} & \texttt{0x38} &  \texttt{0x30}\\
+			\texttt{x << 3} (Binary) & \texttt{0001 1000} & \texttt{1010 1000} & \texttt{0011 1000} &  \texttt{0011 0000}\\
+			\hline
+			
+			\texttt{x >> 2} (Logical, Hex) & \texttt{0x30} & \texttt{0x1D} & \texttt{0x21} & \texttt{0x19} \\
+			\texttt{x >> 2} (Logical, Binary) & \texttt{0011 0000} & \texttt{0001 1101} & \texttt{0010 0001} & \texttt{0001 1001} \\
+			\hline
+			
+			\texttt{x >> 2} (Arithmetic, Hex)  & \texttt{0xF0} & \texttt{0x1D} & \texttt{0xE1} & \texttt{0x19} \\
+			\texttt{x >> 2} (Arithmetic, Binary)  & \texttt{1111 0000} & \texttt{0001 1101} & \texttt{1110 0001} & \texttt{0001 1001} 
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.17}
+	Assuming $w=4$, we can assign a numeric value to each possible hexadecimal digit,
+	assuming either an unsigned or a two's-complement interpretation. Fill in the following
+	table according to these interpretations by writing out the nonzero powers of $2$
+	in the summations shown in Equations~\ref{eq:b2u} and~\ref{eq:b2t}:
+	\begin{equation}\label{eq:b2u}
+		B2U_w(\vec{x})\doteq\sum_{i=0}^{w-1}x_i2^i
+	\end{equation}
+	\begin{equation}\label{eq:b2t}
+		B2T_w(\vec{x})\doteq-x_{w-1}2^{w-1}+\sum_{i=0}^{w-2}x_i2^i
+	\end{equation}
+	where $w$ is a positive integer, $x_i\in\{0,1\}$, and $\vec{x}=[x_{w-1},x_{w-2},\ldots,x_0]$.
+	\begin{center}
+		\begin{tabular}{cccc}
+			Hexadecimal & Binary & $B2U_4(\vec{x})$ & $B2T_4(\vec{x})$ \\
+			\hline
+			\texttt{0xE} & \texttt{[1110]} & $2^3+2^2+2^1=14$ & $-2^3+2^2+2^1=-2$\\
+			\texttt{0x0} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{0x5} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{0x8} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{0xD} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{0xF} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{cccc}
+			Hexadecimal & Binary & $B2U_4(\vec{x})$ & $B2T_4(\vec{x})$ \\
+			\hline
+			\texttt{0xE} & \texttt{[1110]} & $2^3+2^2+2^1=14$ & $-2^3+2^2+2^1=-2$\\
+			\texttt{0x0} & \texttt{[0000]} & $0$ & $0$\\
+			\texttt{0x5} & \texttt{[0101]} & $2^2+2^0=5$ & $2^2+2^0=5$\\
+			\texttt{0x8} & \texttt{[1000]} & $2^3=8$ & $-2^{-3}=-8$\\
+			\texttt{0xD} & \texttt{[1101]} & $2^3+2^2+2^0=13$ & $-2^3+2^2+2^0=-3$\\
+			\texttt{0xF} & \texttt{[1111]} & $2^3+2^2+2^1+2^0=15$ & $-2^{-3}+2^2+2^1+2^0=-1$
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.18}
+	In Chapter 3, we will look at listings generated by a \emph{diassembler}, a program that
+	converts an executable program file back to a more readable ASCII form. These
+	files contain many hexadecimal numbers, typically representing values in two's-complement
+	form. Being able to recognize these numbers and understand their significance
+	(for example, whether they are negative or positive) is an important skill.
+	
+	\
+	\noindent For lines labeled A-I (on the right) in the following listing, convert the
+	hexadecimal values (in 32-bit two's complement form) shown to the right of the
+	instruction names (\texttt{sub}, \texttt{mov}, and \texttt{add}) into their decimal
+	equivalents:
+	\begin{lstlisting}{}
+4004d0:   48 81 ec e0 02 00 00     sub    $0x2e0,%rsp                 A.
+4004d7:   48 8b 44 24 a8           mov    -0x58(%rsp),%rax            B.
+4004dc:   48 03 47 28              add    0x28(%rdi),%rax             C.
+4004e0:   48 89 44 24 d0           mov    %rax,-0x30(%rsp)            D.
+4004e5:   48 8b 44 24 78           mov    %0x78(%rsp),%rax            E.
+4004ea:   48 89 87 88 00 00 00     mov    %rax,0x88(%rdi)             F.
+4004f1:   48 8b 84 24 f8 01 00     mov    0x1f8(%rsp),%rax            G.
+4004f8:   00
+4004f9:   48 03 44 24 08           add    0x8(%rsp),%rax
+4004fe:   48 89 84 24 c0 00 00     mov    %rax,%0xc0(%rsp)            H.
+400505:   00
+400506:   48 8b 44 d4 b8           mov    -0x48(%rsp,%rdx,8),%rax     I.
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\Alph*)]
+		\item We are given \texttt{\texttt{$\bar{x}$} = 0x2e0 = 0010 1110 0000}. Since the number
+		is given in 32-bit two's complement form, the other 20 bits are 0. By using the $B2T_{32}$
+		function, we get
+		\begin{align*}
+			B2T_{32}(\bar{x})=2^{9}+2^{7}+2^{6}+2^{5}=736
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0x58 = 0101 1000}, we interpret the \texttt{-} as
+		a negative sign and get
+		\begin{align*}
+			-B2T_{32}(\bar{x})=-\left(2^{6} + 2^{4} + 2^{3}=2,147,483,560\right)=-88
+		\end{align*}
+		\item Since \texttt{$\bar{x}$ = 0x28 = 0010 1000}, we get
+		\begin{align*}
+			B2T_{32}(\bar{x})=2^5+2^3=40
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0x30 = 0011 0000}, we get
+		\begin{align*}
+			-B2T_{32}(\bar{x})=-\left(2^5+2^4\right) = -48
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0x78 = 0111 1000}, we get
+		\begin{align*}
+			B2T_{32}(\bar{x})=2^6+2^5+2^4+2^3=120
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0x88 = 1000 1000}, we get
+		\begin{align*}
+			B2T_{32}(\bar{x}) = 2^7 + 2^3 = 136
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0x1f8 = 0001 1111 1000}, we get
+		\begin{align*}
+			B2T_{32}(\bar{x})=2^8 + 2^7 + 2^6 + 2^5 + 2^4 + 2^3 = 504
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0xc0 = 1100 0000}, we get
+		\begin{align*}
+			B2T_{32}(\bar{x})=2^{7}+2^{6}=192
+		\end{align*}
+		\item Letting \texttt{$\bar{x}$ = 0x48 = 0100 1000}, we get
+		\begin{align*}
+			-B2T_{32}(\bar{x}) = -\left(2^6 + 2^3\right) = 72
+		\end{align*}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.19}
+	Using the table you filled when solving Problem 2.17, fill in the following table describing
+	the function $T2U_4$:
+	\begin{center}
+		\begin{tabular}{cc}
+			$x$ & $T2U_4(x)$\\
+			\hline
+			-8 & \makebox[1cm]{\hrulefill}\\
+			-3 & \makebox[1cm]{\hrulefill}\\
+			-2 & \makebox[1cm]{\hrulefill}\\
+			-1 & \makebox[1cm]{\hrulefill}\\
+			 0 & \makebox[1cm]{\hrulefill}\\
+			 5 & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{cc}
+			$x$ & $T2U_4(x)$\\
+			\hline
+			-8 & 8\\
+			-3 & 13\\
+			-2 & 14\\
+			-1 & 15\\
+			0 & 0\\
+			5 & 5
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.20}
+	Explain how Equation~\ref{eqn:t2u} applies to the entries in the table you generated when
+	solving Problem 2.19.
+	\begin{equation}\label{eqn:t2u}
+		T2U_w(x)=\begin{cases}
+			x + 2^w, & x < 0\\
+			x,       & x\geq 0
+		\end{cases}
+	\end{equation}
+\end{ex}
+
+\begin{sol}
+	In Problem 2.19, we had $w=4$. If the value on the left is non-negative, it remains unchanged.
+	Otherwise, we add $2^4=16$ to the corresponding value on the left column.
+\end{sol}
+
+\begin{ex}{2.21}
+	Assuming the expressions are evaluated when executing a 32-bit program on a machine that uses
+	two's-complement arithmetic, fill in the following table describing the effect of casting
+	and relational operations, in the style of Figure 2.19 (of text).
+		\begin{center}
+		\begin{tabular}{ccc}
+			\hline
+			Expression & Type & Evaluating \\
+			\hline
+			\texttt{-2147483647-1 == 2147483648U} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{-2147483647-1 == 2147483647} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{-2147483647-1U == 2147483647} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{-2147483647-1 == -2147483647} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{-2147483647-1U == -2147483647} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		Note that in the operation \texttt{-2147483647-1U}, the operand \texttt{1U} is unsigned,
+		so C implicitly casts \texttt{-2147483647} to the unsigned number $2147483647+2^{32}=2147483649$.
+		\begin{tabular}{ccc}
+			\hline
+			Expression & Type & Evaluating \\
+			\hline
+			\texttt{-2147483647-1 == 2147483648U} & Unsigned & \texttt{1}\\
+			\texttt{-2147483647-1 == 2147483647} & Signed & \texttt{0}\\
+			\texttt{-2147483647-1U == 2147483647} & Unsigned & \texttt{0} \\
+			\texttt{-2147483647-1 == -2147483647} & Signed & \texttt{1}\\
+			\texttt{-2147483647-1U == -2147483647} & Unsigned & \texttt{0}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.22}
+	Show that each of the following bit vectors is a two's-complement representation of -5
+	by applying Equation~\ref{eq:b2t}:
+	\begin{enumerate}[label=(\alph*)]
+		\item {}[1011]
+		\item {}[11011]
+		\item {}[111011]
+	\end{enumerate}
+	Observe that the second and third bit vectors can be derived from the first by sign extension.
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item $w=4$, so $B2T_4([1011])=-2^3+2^1+2^0=-8+2+1=-5$.
+		\item $w=5$, so $B2T_5([11011])=-2^4+2^3+2^1+2^0=-16+8+2+1=-5$.
+		\item $w=6$, so $B2T_6([111011])=-2^5+2^4+2^3+2^1+2^0=-32+16+8+2+1=-5$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}2{2.23}
+	Consider the following C functions:
+	\begin{lstlisting}
+int fun1(unsigned word) {
+	return (int) ((word << 24) >> 24);
+}
+
+int fun2(unsigne dword) {
+	return ((int) word << 24) >> 24;
+}
+	\end{lstlisting}
+	Assume these are executed as a 32-bit program on a machine that uses two's-complement arithmetic.
+	Assume also that right shifts og signed values are performed arithmetically, while right shifts
+	of unsigned values are performed logically.
+	\begin{enumerate}[label=(\alph*)]
+		\item Fill in the following table showing the effect of these functions for several example
+		arguments. You will find it more convenient to work with a hexadecimal representation. Just
+		remember that hex digits \texttt{8} through \texttt{F} have their most significant bits
+		equal to 1.
+		\begin{center}
+			\begin{tabular}{ccc}
+				\texttt{w} & \texttt{fun1(w)} & \texttt{fun2(w)}\\
+				\hline
+				\texttt{0x00000076} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+				\texttt{0x87654321} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+				\texttt{0x000000C9} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+				\texttt{0xEDCBA987} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			\end{tabular}
+		\end{center}
+		\item Describe in words the useful computation each of these functions perform.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item
+		\
+		\begin{center}
+			\begin{tabular}{ccc}
+				\texttt{w} & \texttt{fun1(w)} & \texttt{fun2(w)}\\
+				\hline
+				\texttt{0x00000076} & \texttt{0x00000076} & \texttt{0x00000076}\\
+				\texttt{0x87654321} & \texttt{0x00000021} & \texttt{0x00000021}\\
+				\texttt{0x000000C9} & \texttt{0x000000C9} & \texttt{0xFFFFFFC9}\\
+				\texttt{0xEDCBA987} & \texttt{0x00000087} & \texttt{0xFFFFFF87}
+			\end{tabular}
+		\end{center}
+		\item \texttt{fun1} computes the zero-extension of the least significant byte,
+		whereas \texttt{fun2} computes the sign-extension of the least significant byte.
+		and the 
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.24}
+	Suppose we truncate a 4-bit value (represented by hex digits \texttt{0} through
+	\texttt{F}) to a 3-bit value (represented as hex digits \texttt{0} through \texttt{7}).
+	Fill in the table below showing the effect of this truncation for some cases, in terms
+	of the unsigned two's-complement interpretation of those bit patterns.
+	\begin{center}
+		\begin{tabular}{cccccc}
+			\multicolumn{2}{c}{Hex} & \multicolumn{2}{c}{Unsigned} & \multicolumn{2}{c}{Two's Complement}\\
+			Original & Truncated & Original & Truncated & Original & Truncated\\
+			\hline
+			0 & 0 & 0 & \makebox[1cm]{\hrulefill} & 0 & \makebox[1cm]{\hrulefill}\\
+			2 & 2 & 2 & \makebox[1cm]{\hrulefill} & 2 & \makebox[1cm]{\hrulefill}\\
+			9 & 1 & 9 & \makebox[1cm]{\hrulefill} & -7 & \makebox[1cm]{\hrulefill}\\
+			B & 3 & 11 & \makebox[1cm]{\hrulefill} & -5 & \makebox[1cm]{\hrulefill}\\
+			F & 7 & 15 & \makebox[1cm]{\hrulefill} & -1 & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+	Explain how Equations~\ref{eqn:trunc-b2u-k} and ~\ref{eqn:trunc-b2t-k} apply to these cases.
+	\begin{equation}\label{eqn:trunc-b2u-k}
+		B2U_k([x_{k-1}, x_{k-2},\ldots,x_0])=B2U_w([x_{w-1},x_{w-2},\ldots,x_0])\mod 2^k
+	\end{equation}
+	\begin{equation}\label{eqn:trunc-b2t-k}
+		B2T_k([x_{k-1}, x_{k-2},\ldots,x_0])=U2T_k)(B2U_w([x_{w-1},x_{w-2},\ldots,x_0])\mod 2^k)
+	\end{equation}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{cccccc}
+			\multicolumn{2}{c}{Hex} & \multicolumn{2}{c}{Unsigned} & \multicolumn{2}{c}{Two's Complement}\\
+			Original & Truncated & Original & Truncated & Original & Truncated\\
+			\hline
+			0 & 0 & 0 & 0 & 0 & 0\\
+			2 & 2 & 2 & 2 & 2 & 2\\
+			9 & 1 & 9 & 1 & -7 & 1\\
+			B & 3 & 11 & 3 & -5 & 3\\
+			F & 7 & 15 & 7 & -1 & -1
+		\end{tabular}
+	\end{center}
+	The value under the Unsigned  Truncated column is obtained by applying equation~\ref{eqn:trunc-b2u-k},
+	where we take apply $x\mod (2^3)=x\mod8$ to all of the values. The value under the Two's Complement
+	Truncated column ar obtained by mapping applying equation~\ref{eqn:trunc-b2t-k}, which means
+	we just apply $U2T_3$ to the result of the Unsigned Truncated column.
+\end{sol}
+
+\begin{ex}{2.25}
+	Consider the following code that attempts to sum the elements of an array \texttt{a},
+	where the number of elements is given by parameter \texttt{length}:
+	\begin{lstlisting}
+/* WARNING: This is buggy code */
+float sum_elements(float a[], unsigned length) {
+	int i;
+	float result = 0;
+	
+	for (i = 0; i <= length-1; i++)
+	    result += a[i];
+	return result;
+}
+	\end{lstlisting}
+	When run with argument \texttt{length} equal to 0, this code should return \texttt{0.0}.
+	Instead, it encounters a memory error. Explain why this happens. Show how this can be
+	corrected.
+\end{ex}
+
+\begin{sol}
+	The argument \texttt{length} is unsigned, so in the operation \texttt{length-1} of
+	the loop condition, the operation is equivalent to \texttt{length-1U} because C implicit
+	casts the signed operand \texttt{-1} to unsigned. The result is \texttt{0+UINT\_MAX},
+	where \texttt{UINT\_MAX} is the constant declared in \texttt{<limits.h>} that represents
+	the maximum unsigned number that can be represented on the existing machine.
+	When the unsigned comparison then happens, the loop condition is always true because
+	no unsigned number exceeds this one. When the index \texttt{i} is then used to index
+	into the array \texttt{a} inside the loop, an invalid memory location is accessed,
+	causing the error. We can correct the by changing the condition to from
+	\texttt{i <= length -1} to \texttt{i < length}.
+\end{sol}
+
+\begin{ex}{2.26}
+	You are given the assignment of writing a function that determines whether one string is
+	longer than another. You decide to make use of the string library function \texttt{strlen}
+	having the following declaration:
+	\begin{lstlisting}
+/* Prototype for library function strlen */
+size_t strlen(const char *s);
+	\end{lstlisting}
+	Here is your first attempt at the function:
+	\begin{lstlisting}
+/* Determine whether string s is longer than string t */
+/* WARNING: This function is buggy */
+int strlonger(char *s, char *t) {
+	return strlen(s) - strlen(t) > 0;
+}
+	\end{lstlisting}
+	When you test this on some simple data, things do not seem to work quite right. You
+	investigate further and determine that, whe compiled as a 32-bit program, data type
+	\texttt{size\_t} is defined (via \texttt{typedef}) in header file \texttt{stdio.h} to
+	be \texttt{unsigned}.
+	\begin{enumerate}[label=(\alph*)]
+		\item For what cases will this function produce an incorrect result?
+		\item Explain how this incorrect result comes about.
+		\item Show how to fix the code so that it will work reliably.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The function will fail anytime the difference is negative, which is when
+		\texttt{s} is shorter than \texttt{t}.
+		\item The error occurs because when an expression contains unsigned operands,
+		C will implicitly cast signed operands to unsigned. In this case, the result of \texttt{strlen(s) - strlen(t)} is cast to an unsigned number. Therefore, if the result is negative, it is
+		cast to a positive number. If the result is negative, it is then cast to a positive
+		number.
+		\item We can fix the problem by replacing the expression after the \texttt{return} statement
+		with \texttt{return strlen(s) > strlen(t)}.
+	\end{enumerate}
+\end{sol}
+\end{document}
