@@ -1,6 +1,6 @@
 #include <glib.h>
 #include <limits.h> // UINT_MAX
-#include "overflow.h"
+#include "uoverflow.h"
 
 
 void test_no_overflow() {
