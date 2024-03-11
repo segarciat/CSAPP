@@ -1197,4 +1197,680 @@ int strlonger(char *s, char *t) {
 		with \texttt{return strlen(s) > strlen(t)}.
 	\end{enumerate}
 \end{sol}
+
+\begin{ex}{2.27}
+	Write a function with the following prototype:
+	\begin{lstlisting}
+/* Determine whether arguments can be added without overflow */
+int uadd_ok(unsigned x, unsigned y);
+	\end{lstlisting}
+	This function should return 1 if arguments \texttt{x} and \texttt{y} can be
+	added without overflow.
+\end{ex}
+
+\begin{sol}
+	See code listing below for \texttt{./27-unsigned-addition-overflow/uoverflow.c}:
+	\lstinputlisting{./27-unsigned-addition-overflow/uoverflow.c}
+\end{sol}
+
+\begin{ex}{2.28}
+	The presents shows that for any number $x$ such that $0\leq x<2^w$, its $w$-bit
+	unsigned negation $-^u_w$ is given by the following:
+	\begin{equation}\label{eqn:unsigned-negation}
+		-^u_wx=\begin{cases}
+			x, & x = 0\\
+			2^w-x, & x > 0
+		\end{cases}
+	\end{equation}
+
+	\noindent We can represent a bit pattern of length $w=4$ with a single hex digit. For an
+	unsigned interpretation of these digits, use Equation~\ref{eqn:unsigned-negation}
+	to fill in the following table giving the values and bit representations (in hex)
+	of the unsigned additive inverses of the digits shown.
+	\begin{center}
+		\begin{tabular}{cccc}
+			\multicolumn{2}{c}{$x$} & \multicolumn{2}{c}{$-^u_wx$}\\
+			\hline
+			Hex & Decimal & Decimal & Hex\\
+			\hline
+			\texttt{0} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{5} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{8} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{D} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\texttt{F} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{cccc}
+			\multicolumn{2}{c}{$x$} & \multicolumn{2}{c}{$-^u_wx$}\\
+			\hline
+			Hex & Decimal & Decimal & Hex\\
+			\hline
+			\texttt{0} & 0 & 0 & \texttt{0x0}\\
+			\texttt{5} & 5 & 11 & \texttt{0xB}\\
+			\texttt{8} & 8 & 8 & \texttt{0x8}\\
+			\texttt{D} & 13 & 3 & \texttt{0x3}\\
+			\texttt{F} & 15 & 1 & \texttt{0x1}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.29}
+	Fill in the following table in the style of Figure 2.25 (of book). Give the integer values
+	of the 5-bit arguments, the values of both their integer and two's-complement sums,
+	the bit-level representation of the two's-complement sum, and the case from the
+	derivation of Equation 2.13.
+	\begin{center}
+		\begin{tabular}{ccccc}
+			$x$ & $y$ & $x+y$ & $x+^t_5y$ & Case\\
+			\hline
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			[10100] & [10001] & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			[11000] & [11000] & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			[10111] & [01000] & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			[00010] & [00101] & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			[01100] & [00100] & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} 
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccccc}
+			$x$ & $y$ & $x+y$ & $x+^t_5y$ & Case\\
+			\hline
+			-12 & -15 & -27 & 5 & 1\\
+			
+			[10100] & [10001] & [100101] & [00101] \\
+			
+			-8 & -8 & -16 & -16 & 2\\
+			
+			[11000] & [11000] & [10000] & [10000] \\
+			
+			-9 & 8 & -1 & -1 & 2\\
+			
+			[10111] & [01000] & [11111] & [11111] \\
+			
+			2 & 5 & 7 & 7 & 3 \\
+			
+			[00010] & [00101] & [00111] & [00111] \\
+			
+			12 & 4 & 16 & -16 & 4\\
+			
+			[01100] & [00100] & [010000] & [10000]
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.30}
+	Write a function with the following prototype
+	\begin{lstlisting}
+/* Determine whether arguments can be added without overflow */
+int tadd_ok(int x, int y);
+	\end{lstlisting}
+	This function should return 1 if arguments \texttt{x} and \texttt{y} can be added without
+	causing overflow.
+\end{ex}
+
+\begin{sol}
+	See code listing below for \texttt{./30-signed-addition-overflow/toverflow.c}:
+	\lstinputlisting{./30-signed-addition-overflow/toverflow.c}
+\end{sol}
+
+\begin{ex}{2.31}
+	Your coworker gets impatient with your analysis of the overflow conditions for
+	two's-complement addition and presents you with the following implementation
+	of \texttt{tadd\_ok}:
+	\begin{lstlisting}
+/* Determine whether arguments can be added without overflow */
+/* WARNING: This code is buggy */
+int tadd_ok(int x, int y) {
+	int sum = x + y;
+	return (sum-x == y) && (sum-y == x);
+}
+	\end{lstlisting}
+	You look at the code and laugh. Explain why.
+\end{ex}
+
+\begin{sol}
+	\
+	Recall that two's-complement numbers have the same bit-level representation
+	as unsigned numbers. Therefore, two's-complement addition is characterized by
+	converting to unsigned, performing unsigned addition, and converting back to
+	two's-complement. As a result, \texttt{(x + y) - x} equals \texttt{y},
+	because unsigned addition is just modulo addition. Converting back to
+	signed, now we are comparing two signed numbers with the same bit-level
+	representation. The result always true; that is, \texttt{sum-x == y} is as
+	tautology. Similarly, \texttt{sum -y} always equals \texttt{x}. Therefore,
+	the function always returns 1.
+\end{sol}
+
+\begin{ex}{2.32}
+	You are assigned the task of writing code for a function \texttt{tsub\_ok}, with
+	arguments \texttt{x} and \texttt{y}, that will return 1 if computing \texttt{x-y}
+	does not cause overflow. Having just written the code for Problem 2.30, you write
+	the following:
+	\begin{lstlisting}
+/* Determine whether arguemnts can be subtracted without overflow */
+/* WARNING: This code is buggy */
+int tsub_ok(int x, int y) {
+	return tadd_ok(x, -y);
+}
+	\end{lstlisting}
+	For what values of \texttt{x} and \texttt{y} will this function give incorrect
+	results? Writing a correct version of this function is left as an exercise (Problem 2.74).
+\end{ex}
+
+\begin{sol}
+	Subtraction overflow occurs when \texttt{x >= 0, y < 0}, and \texttt{x - y < 0},
+	or when \texttt{x <= 0, y > 0}, and \texttt{x - y > 0}. Suppose that
+	\texttt{$TMin_w$ < y <= $TMax_w$}; then \texttt{-$TMax_w$ <= -y < $-TMin_w$}, or
+	equivalently, \texttt{$TMin_w$ < -y <= $TMax_w$}. Then, \texttt{x + (-y)} causes
+	positive overflow if \texttt{x > 0, -y > 0}, and \texttt{x + (-y) < 0}, which is
+	equivalent to the first subtraction overflow condition. Similarly,
+	\texttt{x + (-y)} causes negative overflow if \texttt{x < 0, -y < 0}, and \texttt{x + (-y) > 0},
+	which is precisely the second condition.
+	
+	\
+	However, suppose that \texttt{y} is $TMin_w$. Then \texttt{-y} is unchanged. Recalling
+	that the bit-level representation for two's-complement numbers is the same as
+	unsigned, we could get the negated value by converting to unsigned, negating, and
+	converting back to two's-complement. In converting to unsigned, \texttt{y} becomes
+	$-TMin_w$ (which is a positive value in the range of unsigned numbers), and then
+	applying the inverse operation \texttt{-} means we compute $2^w - y$, which remains
+	unchanged because $-TMin_w=2^{w-1}$, so $2^w-y=2^w-2^{w-1}=2^{w-1}=-TMin_w$. Converting
+	back to signed, we are back with the same number we started; that is,
+	\texttt{y == -y}. But now:
+	\begin{enumerate}[label=(\roman*)]
+		\item If \texttt{x} is 0, we get \texttt{tadd\_ok(0, -y)}, which gives 1 because
+		that addition does not overflow. However, the result of \texttt{0 - y} should
+		be a positive number, so the \texttt{tsub\_ok} ends up reporting the wrong value.
+		\item If \texttt{x} is positive, then \texttt{tadd\_ok(x, -y)} reports 1 again,
+		because there is no problem with adding a positive number and $TMin_w$.
+		However, this is incorrect once again, because $x>0$, $y<0$, and $x-y < 0$,
+		so the output should be 0, indicating overflow happens.
+		\item If \texttt{x} is negative, then \texttt{tadd\_ok} receives a negative
+		number being added to $TMin_w$, so the sum is positive and it reports
+		overflow. However, that's incorrect also; for example $-1 - (TMin_w + 1)$ is a
+		valid expression that returns $TMax_w$ (as it should).
+	\end{enumerate}
+	
+	In summary, it works correctly when \texttt{y} is not $TMin_w$.
+	Suppose \texttt{y} is not $TMin_w$. Then 
+\end{sol}
+
+\begin{ex}{2.33}
+	We can represent a bit pattern of length $w=4$ with a single hex digit. For a
+	two's-complement interpretation of these digits, fill in the following table to
+	determine the additive inverses of the digits shown:
+	\begin{center}
+		\begin{tabular}{cccc}
+			\multicolumn{2}{c}{$x$} & \multicolumn{2}{c}{$-^t_4x$}\\
+			Hex & Decimal & Decimal & Hex\\
+			\hline
+			\texttt{0} &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} \\
+			\texttt{5} &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill} \\
+			\texttt{8} &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill} \\
+			\texttt{D} &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill} \\
+			\texttt{F} &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill}  &  \makebox[1cm]{\hrulefill} 
+		\end{tabular}
+	\end{center}
+	What do you observe about the bit patterns generated by two's-complement
+	and unsigned (Problem 2.28) negation?
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{cccc}
+			\multicolumn{2}{c}{$x$} & \multicolumn{2}{c}{$-^t_4x$}\\
+			Hex & Decimal & Decimal & Hex\\
+			\hline
+			\texttt{0} &  0  &  0 & \texttt{0x0}\\
+			\texttt{5} &  5 & -5 & \texttt{0xB} \\
+			\texttt{8} & -8 & -8 & \texttt{0x8}\\
+			\texttt{D} & -3 & 3 & \texttt{0x3} \\
+			\texttt{F} & -1 & 1 & \texttt{0x1}
+		\end{tabular}
+	\end{center}
+	The bit patterns are the same obtained when doing unsigned negation.
+\end{sol}
+
+\begin{ex}{2.34}
+	Fill in the following table showing the results of multiplying different 3-bit
+	numbers, in the style of Figure 2.27 (of the book):
+	\begin{center}
+		\begin{tabular}{ccccccccc}
+			Mode & \multicolumn{2}{c}{$x$} & \multicolumn{2}{c}{$y$} & \multicolumn{2}{c}{$x\cdot y$}
+			& \multicolumn{2}{c}{Truncated $x\cdot y$}\\
+			\hline
+			Unsigned &  \makebox[1cm]{\hrulefill} & [100] &  \makebox[1cm]{\hrulefill} & [101]
+			&  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} \\
+			Two's complement &  \makebox[1cm]{\hrulefill} & [100] &  \makebox[1cm]{\hrulefill} & [101]
+			&  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} \\
+			Unsigned &  \makebox[1cm]{\hrulefill} & [010] &  \makebox[1cm]{\hrulefill} & [111]
+			&  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} \\
+			Two's complement &  \makebox[1cm]{\hrulefill} & [010] &  \makebox[1cm]{\hrulefill} & [111]
+			&  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} \\
+			Unsigned &  \makebox[1cm]{\hrulefill} & [110] &  \makebox[1cm]{\hrulefill} & [110]
+			&  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} \\
+			Two's complement &  \makebox[1cm]{\hrulefill} & [110] &  \makebox[1cm]{\hrulefill} & [110]
+			&  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill} &  \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccccccccc}
+			Mode & \multicolumn{2}{c}{$x$} & \multicolumn{2}{c}{$y$} & \multicolumn{2}{c}{$x\cdot y$}
+			& \multicolumn{2}{c}{Truncated $x\cdot y$}\\
+			\hline
+			Unsigned &  4 & [100] &  5 & [101] & 20 & [10100] &  4 &  [100] \\
+			Two's complement &  -4 & [100] &  -3 & [101] & 12 &  [01100] & -4 &  [100] \\
+			Unsigned &  2 & [010] &  7 & [111] & 14 &  [01110] & 6 &  [110] \\
+			Two's complement & 2 & [010] & -1 & [111] & -2 & [11110]  &  -2 &  [110] \\
+			Unsigned & 6 & [110] & 6 & [110] & 36 & [100100] & 4 & [100] \\
+			Two's complement &  -2 & [110] & -2 & [110] & 4 & [00100] &  -4 &  [100]
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.35}
+	You are given the assignment to develop code for a function \texttt{tmult\_ok}
+	that will determine whether two arguments can be multiplied without causing
+	overflow. Here is your solution:
+	
+	\begin{lstlisting}
+/* Determine whether arguments can be multiplied without overflow */
+int tmult_ok(int x, int y) {
+	int p = x*y;
+	/* Either x is zero, or diving p by x gives y */
+	return !x || p/x = y;
+}
+	\end{lstlisting}
+	You test this code for a number of values of \texttt{x} and \texttt{y}, and it
+	seems to work properly. Your coworker challenges you, saying ``If I can't use
+	subtraction to test whether addition has overflowed (see Problem 2.31), then how
+	can you  use division to test whether multiplication has overflowed?"
+	
+	Devise a mathematical justification of your approach, along the following lines.
+	First, argue the case $x=0$ is handled correctly. Otherwise, consider
+	$w$-bit numbers $x$ $(x\neq 0)$, $y$, $p$, and $q$, where $p$ is the result of
+	performing two's-complement multiplication on $x$ and $y$, and $q$ is the
+	result of dividing $p$ by $x$.
+	\begin{enumerate}
+		\item Show that $x\cdot y$, the integer product of $x$ and $y$, can be written
+		in the form $x\cdot y=p+t2^w$, where $t\neq 0$ if and only if the computation
+		of $p$ overflows.
+		\item Show that $p$ can be written in the form $p=x\cdot q+r$, where $|r|<|x|$.
+		\item Show that $q=y$ if and only if $r=t=0$.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	If $x=0$, then the product is 0 regardless of the value of $y$, so there is no
+	overflow because $x$ is in the valid range for two's-complement numbers.
+	Now suppose that $x\neq 0$ and $y$ are $w$-bit two's-complement numbers.
+	\begin{enumerate}
+		\item Since $p$ is the result of the unsigned two's-complement
+		multiplication of $x$ and $y$, we have
+		\[
+		p=x*_w^ty=U2T_w((x\cdot y)\mod 2^w)
+		\]
+		In particular, $u=(x\cdot y)\mod 2^w$ is in the range $[0, 2^w-1]$,
+		where $u=(x\cdot y)+s 2^w$ form some $s$, by the definition of modulo
+		arithmetic. Then $U2T_w(u)=-u_{w-1}2^w+u$, where $u_{w-1}$ is its
+		most significant bit. Thus
+		\[
+		p=U2T_w(u)=-u_{w-1}2^{w}+u=(x\cdot y)+(s-u_{w-1})2^w=(x\cdot y)+t2^w
+		\]
+		where we have let $t=(x-u_{w-1})$. If $p$ overflows, then $x\cdot y$ is outside the range that can be represented by $w$ bits, and
+		since $x\cdot y = p - t2^w$, this happens if and only if $t\neq 0$,
+		for if $t=0$, the $x\cdot y=p$, which means they both belong to
+		the range $[TMin_w, TMax_w]$.
+		\item Since $q$ is the quotient of $p$ and $x$, there are two cases:
+		if $x$ evenly divides $p$, the $q=p/x$, and hence,
+		$p=x\cdot q+0$, with $|0|<|x|$ since $x\neq 0$. On the other hand,
+		if there is a remainder when dividing $p$ by $x$, then
+		$p=x\cdot q + r$. 
+		\item Combining both equations, we have
+		\[
+		x\cdot y = x\cdot q + r + t2^w
+		\]
+		If $q=y$, then the equation reduces to
+		\[
+		r=-t2^w
+		\]
+		However, since $|r|<|x|$ and $|x|<2^w$, this equation does not
+		have a solution unless $r=t=0$. On the other hand, if we are
+		given that $r=t=0$, then the equation becomes
+		\[
+		x(y-q)=0
+		\]
+		Since we know that $x\neq 0$, it follows that $y-q=0$, so
+		$y=q$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.36}
+	For the case where data type \texttt{int} has 32 bits, devise a
+	version of \texttt{tmult\_ok} (Problem 2.35) that uses the
+	64-bit precision of \texttt{int64\_t}, without using division.
+\end{ex}
+
+\begin{sol}
+	\
+	We declare a variable \texttt{p} of type \texttt{uint64\_t} to hold
+	the result of the product. However, that is not enough; if we compute
+	the product of the two 32-bit int values, a 32-bit two's-complement
+	multiplication takes place, and the result is simply sign-extended
+	into the result variable. Instead, we need to ensure multiplication
+	occurs as a 64-bit multiplication. To achieve this, we cast the operands
+	to \texttt{uint64\_t}. It's enough to cast one operand, e.g., \texttt{x},
+	since $C$ will implicitly promote the other to be of the larger
+	width. Now, overflows does not occur 32 most significant bits are all
+	0. If we compare the product \texttt{p} to its 32-bit truncated
+	version, we can conclude that no truncation happens if their
+	values are the same. 
+	
+	\
+	See code listing for \texttt{./36-signed-multiplication-overflow/tmultof.c}:
+	\lstinputlisting{./36-signed-multiplication-overflow/tmultof.c}
+\end{sol}
+
+\begin{ex}{2.37}
+	You are given the task of patching the vulnerability in the XDR code
+	shown in the aside on page 100 for the case where both data types
+	\texttt{int} and \texttt{size\_t} are 32 bits. You decide to eliminate
+	the possibility of the multiplication overflowing by computing the
+	number of bytes to allocate using data type \texttt{uint64\_t}.
+	You replace the original call to \texttt{malloc} (line 9) as follows:
+	\begin{lstlisting}
+uint64_t asize = ele_cnt * (uint64_t) ele_size;
+void *result = malloc(asize);
+	\end{lstlisting}
+	Recall that the argument to \texttt{malloc} has type \texttt{size\_t}.
+	\begin{enumerate}
+		\item Does your code provide any improvement over the original?
+		\item How would you change the code to eliminate the
+		vulnerability?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Since the variables of type \texttt{int} and \texttt{size\_t}
+		are both 32 bits, their product fits in a 64-bit number. By using a
+		local variable \texttt{uint64\_t} and casting the \texttt{size\_t}
+		operand to \texttt{untin64\_t}, a zero-extension occurs while a
+		sign-extension occurs for the \texttt{int}. In any case, the product
+		perfectly fits, without multiplication overflow occurring.
+		However, since \texttt{malloc} expects a \texttt{size\_t}
+		which has 32 bits, and we are passing \texttt{asize} which has
+		64 bits, truncation happens, so there is still a risk that the overflow
+		causes the allocated structure to be shorter in length than
+		the argument \texttt{ele\_cnt} that controls our iteration.
+		Hence, the risk remains.
+		\item To begin, I would change the parameter of type \texttt{int}
+		to also be of type \texttt{size\_t}. I would compute the product with 64 bit precision as in
+		the previous part. But rather than immediately calling \texttt{malloc},
+		I would attempt to detect overflow, either via a downcast,
+		such as \texttt{asize == (size\_t) asize}, which would indicate
+		that the most significant 32 bits are 0, or by the method of
+		Problem 2.35, where ensure the quotient of \texttt{asize}
+		and \texttt{ele\_cnt} equals \texttt{ele\_size}.
+		In the scenario that it does not match, I would exit the function early,
+		perhaps by returning \texttt{NULL} just like what happens for the
+		check after the call to \texttt{malloc}.
+ 	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.38}
+	As we will see in Chapter 3, the \texttt{LEA} instruction can perform computations of
+	the form \texttt{(a<<k) + b}, where \texttt{k} is either 0, 1, 2, or 3, and \texttt{b}
+	is either 0 or some program value. The compiler uses this instruction to perform multiplications
+	by constant factors. For example, we can compute \texttt{3*a} as \texttt{(a<<1) + a}.
+	\
+	Considering cases where \texttt{b} is either 0 or equal to \texttt{a}, and all possible values
+	of \texttt{k}, what multiples of \texttt{a} can be computed with a single \texttt{LEA}
+	instruction?
+\end{ex}
+
+\begin{sol}
+	\
+	The possible multiples are:
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{a*1}: This is \texttt{(a<<0) + a}, or just \texttt{a}.
+		\item \texttt{a*2}: \texttt{(a<<1)+0}.
+		\item \texttt{a*3}: \texttt{(a<<1)+a}.
+		\item \texttt{a*4}: \texttt{(a<<2)+0}.
+		\item \texttt{a*5}: \texttt{(a<<2)+a}.
+		\item \texttt{a*8}: \texttt{(a<<3)+0}.
+		\item \texttt{a*9}: \texttt{(a<<3)+a}
+	\end{enumerate}
+	Note that \texttt{(a<<0)} is just \texttt{a}, 
+\end{sol}
+
+\begin{ex}{2.39}
+	According to the text, given a binary representation of $K$ as an alternating
+	sequence of zeros and ones:
+	\[
+	[(0\ldots0)(1\ldots1)(0\ldots0)\cdots(1\ldots1)]
+	\]
+	and letting $n$ and $m$ be bit positions representing the start and end, respectively,
+	of a run of ones, then we can compute the effect of these bits on the product
+	using either of the following two forms:
+	\begin{align*}
+		\text{Form A: }&\texttt{(x<<n)(x<<(n-1))$+\cdots+$(x<<n)}\\
+		\text{Form B: }&\texttt{(x<<(n+1))-(x<<m)}
+	\end{align*}
+	For example, 14 can be written as $[(0\ldots0)(111)(0)]$.
+	\
+	How could we modify the expression for form B for the case where bit position $n$
+	is the most significant bit?
+\end{ex}
+
+\begin{sol}
+	\
+	If bit position $n$ is the most significant bit, then a shift by $(n+1)$ in form B
+	results in 0, since all of the values are bits are shifted out. We can therefore
+	replace that value with 0, amending form B to: \texttt{-(x<<m)}.
+\end{sol}
+
+\begin{ex}{2.40}
+	For each of the following values of $K$, find ways to express \texttt{x*$K$} using
+	only the specified number of operations, where we consider both additions and subtractions
+	to have comparable cost. You may need to use some tricks beyond form A and B rules
+	we have considered so far.
+	\begin{center}
+		\begin{tabular}{cccc}
+			$K$ & Shifts & Add/Subs & Expression\\
+			\hline
+			6 & 2 & 1 & \makebox[1cm]{\hrulefill}\\
+			31 & 1 & 1 & \makebox[1cm]{\hrulefill}\\
+			-6 & 2 & 1 & \makebox[1cm]{\hrulefill}\\
+			55 & 2 & 2 & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	Note that $55=64-9=2^6-2^3-1$, so \texttt{x*55 = x*(64) - x*(8) - x}:
+	\begin{center}
+		\begin{tabular}{ccccc}
+			$K$ (Decimal) Binary & & Shifts & Add/Subs & Expression\\
+			\hline
+			6 & 110 & 2 & 1 & \texttt{(x<<2) + (x<<1)}\\
+			31 & 11111  & 1 & 1 & \texttt{(x<<5) - x}\\
+			-6 & 1010 & 2 & 1 & \texttt{-(x<<3) + (x<<1)}\\
+			55 & 110111 & 2 & 2 & \texttt{(x<<6) - (x<<3) - x}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.41}
+	For a run of ones starting at bit position $n$ down to bit position $m$ ($n\geq m$), we
+	saw that we can generate two forms of code, A and B. How should the compiler decide
+	which form to use?
+\end{ex}
+
+\begin{sol}
+	\
+	Assuming that the cost of addition and subtraction are comparable, and that every
+	left shift is comparable (regardless of the shift amount), then whenever
+	$n-m\geq 2$, meaning there is at least 3 shifts in Form A, then form B should
+	be preferred.
+\end{sol}
+
+\begin{ex}{2.42}
+	Writ a function \texttt{div16} that returns the value \texttt{x/16} for integer
+	arguments \texttt{x}. Your function should not use division, modulus, multiplication,
+	any conditions (\texttt{if} or \texttt{?:}), any comparison operators (e.g., \texttt{<},
+	\texttt{>}, or \texttt{==}), or any loops. You may assume that data type \texttt{int}
+	is 32 bits long, and uses a two's-complement representation, and that right shifts
+	are performed arithmetically.
+\end{ex}
+
+\begin{sol}
+	\
+	My implementation uses bit operations to see if the value is positive or negative, that
+	way I can decide whether biasing is necessary. See code listing for \texttt{./42-div16/div16.c}:
+	\lstinputlisting{./42-div16/div16.c}
+\end{sol}
+
+\begin{ex}{2.43}
+	In the following code, we have omitted the definitions of constants \texttt{M} and \texttt{N}:
+	\begin{lstlisting}
+#define M	/* Mystery number 1 */
+#define N	/* Mystery number 2 */
+int arith(int x, int y) {
+	int result = 0;
+	result = x*M + y/N;	/* M and N are mystery numbers */
+	return result;
+}
+	\end{lstlisting}
+	We compiled this code for particular values of \texttt{M} and \texttt{N}. The compiler
+	optimized the multiplication and division using the methods we have discussed. The
+	following is a translation of the generated machine code back into C:
+	
+	\begin{lstlisting}
+/* Translation of assembly code for arith */
+int optarith(int x, int y) {
+	int t = x;
+	x <<= 5;
+	x -= t;
+	if (y<0) y += 7;
+	y >>= 3;  /* Arithmetic shift */
+	return x+y;
+}
+	\end{lstlisting}
+	What are the values of \texttt{M} and \texttt{N}?
+\end{ex}
+
+\begin{sol}
+	\
+	Here, \texttt{x} was replaced by \texttt{x << 5 - x}, so \texttt{M = } $2^5-2^0=31$.
+	Meanwhile, \texttt{y} was replaced by \texttt{y>>3} if it's positive, or by
+	\texttt{(y+7)>>3} if it's negative. In this case, it means division by 8, so
+	\texttt{N = } $2^3=8$.
+\end{sol}
+
+\begin{ex}{2.44}
+	Assume data type \texttt{int} is 32 bits long and uses two's-complement representation
+	for signed values. Right shifts are performed arithmetically for signed values and
+	logically for unsigned values. The variables are declared and initialized as follows:
+	\begin{lstlisting}
+int x = foo();		/* Arbitrary value */
+int y = bar();		/* Arbitrary value */
+
+unsigned ux = x;
+unsigned uy = y;
+	\end{lstlisting}
+	For each of the following C expressions, either (1) argue that it is true (evaluates to 1)
+	for all vales of \texttt{x} and \texttt{y}, or (2) give values of \texttt{x} and \texttt{y}
+	for which it is false (evaluates to 0):
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{(x > 0) || (x-1 < 0)}
+		\item \texttt{(x \& 7) != 7 || (x << 29 < 0)}
+		\item \texttt{(x * x) >= 0}
+		\item \texttt{x < 0 || -x <= 0}
+		\item \texttt{x > 0 || -x >= 0}
+		\item \texttt{x+y == uy+ux}
+		\item \texttt{x*\~{}y + uy*ux == -x}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The statement is false when \texttt{x} is $TMin_w$, the smallest number
+		that may be represented with a two's-complement integer. The expression
+		\texttt{x > 0} is false because its value, $-2^{w-1}$. The expression
+		\texttt{x-1} causes a negative overflow, resulting in a position number,
+		and making the expression \texttt{x-1 < 0} false. The overall expression
+		is false. The correct way to do this test is: \texttt{x>0 || x<1}.
+		\item Recall that $7_{10}=111_2$. Therefore, \texttt{(x \& 7)} sets all
+		but the three least significant bits to 0. Therefore, if the expression
+		\texttt{(x \& 7) != 7} is false, then it means at least one of the three
+		least significant bits is 0. Meanwhile, the expression \texttt{x << 29}
+		shifts all bits in \texttt{x} by 29 places to the left, meaning that
+		the three least significant bits become the three most significant bits.
+		Now, the way to get the expression to evaluate to false is clear:
+		let \texttt{x} be any number whose value at bit position 2 is 0. The simplest
+		example is 0, because \texttt{x \& 7} is 0, so the first expression is false, and
+		\texttt{x << 29} is 0, so the second expression is also false. For a less trivial
+		example, let \texttt{x} be $3_{10}=011$. Then \texttt{x \& 7} is 3, which is
+		not equal to 7. Meanwhile, \texttt{x << 29} has a 0 as a most significant bit,
+		so the result is not negative.
+		\item The result is flows when the square of \texttt{x} overflows. For example,
+		recall that $TMax_{32}$ is $2^{31}-1$. If \texttt{x} is $2^{16}$, then
+		\texttt{x * x} is $2^{32}$, which results in positive overflow, and hence
+		evaluates to a negative value, making the expression false. In general, any
+		integer value of \texttt{x} such that $\texttt{x} > \sqrt{2^{31}-1}$ will cause
+		overflow.
+		\item This is true for all \texttt{x}. If \texttt{x} is $TMin_w$, then
+		the expression is true because its value is less than 0. If \texttt{x} is
+		not equal to $TMin_w$ but is negative, then the expression is true by
+		\texttt{x < 0}. If \texttt{x} is non-negative, then its inverse \texttt{-x}
+		is a number in the range $TMin_w\leq \texttt{x} \leq 0$, so the second expression
+		is true.
+		\item If \texttt{x} is $TMin_w$, then \texttt{-x} is unchanged because it is its own
+		inverse in two's-complement. Therefore, both \texttt{x > 0} and \texttt{-x >= 0} is
+		false.
+		\item True. By definition, two's-complement addition consists of converting the arguments
+		to unsigned, performing unsigned addition, and then converting to back to two's-complement.
+		Hence, \texttt{x+y} and \texttt{uy+ux} have the same binary representation. Therefore,
+		since \texttt{x+y} is a compared to the unsigned quantity \text{uy+ux}, its type
+		gets promoted to unsigned, and the equivalent bit representations cause the expression
+		to result in true.
+		\item Recall that a number can be negated by inverting its bits and adding 1.
+		That is, \texttt{-y == \texttt{\~{}y + 1}}. Therefore, \texttt{\~{}y == -y - 1}.
+		This means that \texttt{x*\~{}y} is equivalent to \texttt{x*-y - x}. Since
+		\texttt{x*y} and \texttt{ux*uy} are equal (noting that \texttt{x*y} has the same
+		representation and gets cast to unsigned), the result is \texttt{-x}.
+	\end{enumerate}
+\end{sol}
 \end{document}
