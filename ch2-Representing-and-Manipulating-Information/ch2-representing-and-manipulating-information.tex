@@ -1873,4 +1873,534 @@ unsigned uy = y;
 		representation and gets cast to unsigned), the result is \texttt{-x}.
 	\end{enumerate}
 \end{sol}
+
+\begin{ex}{2.45}
+	Fill in the missing information in the following table.
+	\begin{center}
+		\begin{tabular}{ccc}
+			Fractional value & Binary representation & Decimal representation \\
+			\hline
+			$\frac{1}{8}$ &  $0.001$ & $0.125$\\
+			$\frac{3}{4}$ & \makebox[1cm]{\hrulefill}& \makebox[1cm]{\hrulefill}\\
+			$\frac{5}{16}$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & $10.1011$ & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & $1.001$ & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $5.875$\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $3.1875$
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	We can multiply (shift left) to
+	get a whole number, convert to binary, and then shift right by the original
+	amount. For example, shifting since $16=2^4$, in converting $\frac{5}{16}$
+	we can shift left by 4 bits to get a value of $5_{10}$ convert to binary $101_2$,
+	then then shift right by 4 bits to get $0.0101_2$.
+	\begin{center}
+		\def\arraystretch{1.25}%  1 is the default, change whatever you need
+		\begin{tabular}{ccc}
+			Fractional value & Binary representation & Decimal representation \\
+			\hline
+			$\frac{1}{8}$ &  $0.001$ & $0.125$\\
+			$\frac{3}{4}$ & 0.11& $0.75$\\
+			$\frac{5}{16}$ & 0.0101 & 0.3125\\
+			$\frac{43}{16}$ & $10.1011$ & 2.6875\\
+			$\frac{9}{8}$ & $1.001$ & 1.125\\
+			$\frac{47}{8}$ & 101.111 & $5.875$\\
+			$\frac{51}{16}$ & 11.0011 & $3.1875$
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.46}
+	The imprecision of floating-point arithmetic can have disastrous effects. On
+	February 25, 1991, during the first Gulf War, an American Patriot Missile battery
+	in Dharan, Saudi Arabia, failed to intercept an incoming Iraqi Scud missile. The
+	Scud struck an American Army barracks and killed 28 soldiers. The US General
+	Accounting Office (GAO) conducted a detailed analysis of the failure and determined
+	that the underlying cause was an imprecision in a numeric calculation. In this
+	exercise, you will reproduce part of the GAO's analysis.
+	\
+	The Patriot system contains an internal clock, implemented as a counter that is
+	incremented every 0.1 seconds. To determine the time in seconds, the program would
+	multiply the value of this counter by a 24-bit quantity that was a fractional
+	binary approximation to $\frac{1}{10}$. In particular, the binary representation
+	of $\frac{1}{10}$ is the nonterminating sequence $0.000110011[0011]\cdots_2$,
+	where the portion in brackets is repeating indefinitely. The program approximated
+	$0.1$, as a value $x$, by considering just the first 23 bits of the sequence to
+	the right of the binary point: $x=0.000 1100 1100 1100 1100 1100$. (See Problem 2.51
+	for a discussion of how they could have approximated 0.1 more precisely).
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the binary representation of $0.1-x$?
+		\item What is the approximate decimal value of $0.1-x$?
+		\item The clock starts at 0 when the system is first powered up, and keeps
+		counting up from there. In this case, the system had been running for around
+		100 hours. What was the difference between the actual time and the time
+		computed by the software?
+		\item The system predicts where an incoming missile will appear based on its
+		velocity and the time of the last radar detection. Given that a Scud travels
+		at around 2,000 meters per second, how far off was its prediction?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item In expanding the binary representation and taking the difference, the
+		23 bits just to the right of the binary point cancel, and we get:
+		$0.1-x$ is $0.000 0000 0000 0000 0000 0000 [0011]\cdots_2$.
+		\item The decimal gives about $9.53674316\times 10^{-8}$.
+		\item 100 hours is equivalent to 360,000 seconds, and since the value incremented
+		every 0.1 seconds, the value must have incremented, 3,600,000 million times.
+		The discrepancy is around 0.343322753926234 seconds.
+		\item It was $\approx2000\times 0.34=680$ meters off.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.47}
+	Consider a 5-bit floating-point representation based on the IEEE floating-point
+	format, with one sign bit, two exponent bits ($k=2$), and two fraction bits ($n=2$).
+	The exponent bias is $2^{2-1}-1=1$.
+	\
+	The table that follows enumerates the entire nonnegative range for this 5-bit
+	floating point representation. Fill in the blank table entries using the following
+	directions:
+	\begin{itemize}
+		\item $e$: The value represented by  considering the exponent field to be an
+		unsigned integer.
+		\item $E$: The value fo the exponent after biasing.
+		\item $2^E$: The numeric weight of the exponent.
+		\item $f$: The value of the fraction.
+		\item $M$: The value of the significand.
+		\item $2^E\times M$: The (unreduced) fractional value of the number.
+		\item $V$: The reduced fractional value of the number.
+		\item Decimal: The decimal representation of the number.
+	\end{itemize}
+	\begin{center}
+		\begin{tabular}{ccccccccc}
+			Bits  & $e$ & $E$ & $2^E$ & $f$ & $M$ & $2^E\times M$ &  $V$ & Decimal\\
+			\hline
+			\texttt{0 00 00} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 00 01} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 00 10} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 00 11} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 01 00} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 01 10} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 01 11} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 10 00} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 10 01} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 10 10} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 10 11} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 11 00} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 11 01} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 11 10} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0 11 11} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	Recall that $+\infty$ has all 1s for the exponent field, all zeros
+	for the fraction field, and $s=0$. If $s=1$, then we instead have
+	$-\infty$.
+	\begin{center}
+		\def\arraystretch{1.25}
+		\begin{tabular}{ccccccccc}
+			Bits  & $e$ & $E$ & $2^E$ & $f$ & $M$ & $2^E\times M$ &  $V$ & Decimal\\
+			\hline
+			\texttt{0 00 00} & 0 & 0 & $1$ & 0 & $0$ & 0 & $0$ & $0.0$ \\
+			
+			\texttt{0 00 01} & 0 & 0 & $1$ & $\frac{1}{4}$ & $\frac{1}{4}$ & 
+			$\frac{1}{4}$& $\frac{1}{4}$ & $0.25$ \\
+			
+			\texttt{0 00 10} & 0 & 0 & $1$ & $\frac{2}{4}$ & $\frac{1}{2}$ & 
+			$\frac{1}{2}$ & $\frac{1}{2}$ & $0.50$ \\
+			
+			\texttt{0 00 11} & 0 & 0 & $1$ & $\frac{3}{4}$ & $\frac{3}{4}$ & 
+			$\frac{3}{4}$ & $\frac{3}{4}$ & $0.75$ \\
+			
+			\texttt{0 01 00} & 1 & 0 & 1 & $0$ & $1$ & $1$ & $1$ & $1.0$ \\
+			
+			\texttt{0 01 01} & 1 & 0 & 1 & $\frac{1}{4}$ & $\frac{5}{4}$ & $\frac{5}{4}$ & $\frac{5}{4}$ & $1.25$ \\
+			
+			\texttt{0 01 10} & 1 & 0 & 1 & $\frac{2}{4}$ & $\frac{6}{4}$ & $\frac{6}{4}$ & 
+			$\frac{3}{2}$ & $1.5$ \\
+			
+			\texttt{0 01 11} & 1 & 0 & 1 & $\frac{3}{4}$ & $\frac{7}{4}$ & $\frac{7}{4}$ & $\frac{7}{4}$ & $1.75$ \\
+			
+			\texttt{0 10 00} & 2 & 1 & $2$ & $0$ & $1$& $2$ & $2$ & $2.0$ \\
+			
+			\texttt{0 10 01} & 2 & 1 & $2$ & $\frac{1}{4}$ & $\frac{5}{4}$ & $\frac{10}{4}$ & $\frac{5}{2}$ & $2.5$ \\
+			
+			\texttt{0 10 10} & 2 & 1 & $2$ & $\frac{2}{4}$ & $\frac{6}{4}$ & $\frac{12}{4}$ & $3$ & $3.0$ \\
+			
+			\texttt{0 10 11} & 2 & 1 & $2$ & $\frac{3}{4}$ & $\frac{7}{4}$ & $\frac{14}{4}$ & $\frac{7}{2}$ & $3.5$ \\
+			
+			\texttt{0 11 00} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $\infty$ & \makebox[1cm]{\hrulefill} \\
+			
+			\texttt{0 11 01} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & NaN & \makebox[1cm]{\hrulefill} \\
+			
+			\texttt{0 11 10} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & NaN & \makebox[1cm]{\hrulefill} \\
+			
+			\texttt{0 11 11} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & NaN & \makebox[1cm]{\hrulefill} \\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.48}
+	As mentioned in Problem 2.6, the integer $3,510,593$ has a hexadecimal representation
+	\texttt{0x00359141}, while the single-precision representation floating-point
+	number  $3,510,593.0$ has hexadecimal representation \texttt{0x4A564504}. Derive
+	this floating-point representation and explain the correlation between the bits of the
+	integer and floating-point representations.
+\end{ex}
+
+\begin{sol}
+	\
+	First we convert the hexadecimal to binary:
+	\begin{align*}
+		\texttt{0000 0000 0011 0101 1001 0001 0100 0001}
+	\end{align*}
+	Then we shift a binary point starting from the right until the leading 1,
+	a total of 21 places:
+	\begin{align*}
+		\texttt{1.101011001000101000001}\times 2^{21}
+	\end{align*}
+	We drop the leading 1, and add sufficient zeros to the end to ensure there are 23
+	fractional bits:
+	\begin{align*}
+		f=\texttt{10101100100010100000100}
+	\end{align*}
+	Then we bias the exponent by adding $2^{8-1}-1=2^7-1=127$ to the $21$ exponent,
+	giving $148$:
+	\begin{align*}
+		E=148_{10}=10010100_2
+	\end{align*}
+	Then since the number is positive, the sign bit is $s=0$. The full binary representation
+	is now:
+	\begin{align*}
+		\texttt{0 10010100 10101100100010100000100}
+	\end{align*}
+	We can convert it to hexadecimal by grouping bits into groups of 4:
+	\begin{align*}
+		\texttt{0100 1010 0101 0110 0100 0101 0000 0100}\\
+	\end{align*}
+	which has hexadecimal representation \texttt{0x4A56504}. To see the relationship
+	between the two binary representations, we shift them relative to each other:
+	\begin{align*}
+		00&000000001\textbf{101011001000101000001}\\
+		  &010010100\textbf{101011001000101000001}00
+	\end{align*}
+	The lower significant bits of the integer match the high order bits of the fraction
+	part of the floating point representation, except that the implicit leading 1 is not
+	included in the floating point representation.
+\end{sol}
+
+\begin{ex}{2.49}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item For a floating-point format with an $n$-bit fraction, give a formula
+		for the smallest positive integer that cannot be represented exactly (because
+		it would require an $(n+1)$-bit fraction to be exact). Assume the exponent
+		field size $k$ is large enough that the range of representable exponents does
+		not provide a limitation for this problem.
+		\item What is the numeric value of this integer for single-precision format
+		$(n=23)$?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The number would require moving the binary point to the left $n+1$ times.
+		For example, $1011$ requires moving the decimal left 3 times, so it can be
+		represented by a 3-bit fraction, as in $1.011\times 2^3$. If we have an
+		$n$-bit fraction, then we have $1.f_{n-1},f_{n-2}\cdots f_1f_{0}\times 2^{n}$ because
+		of the implicit leading 1. If we have, say
+		\begin{align*}
+			1f_{n-1}f_{n-2}\cdots f_1f_0b
+		\end{align*}
+		where $b$ is an $(n+1)$-th bit after the leading 1, then re-writing this requires
+		\begin{align*}
+			1.f_{n-1}f_{n-2}\cdots f_1f_0b\times 2^{n+1}
+		\end{align*}
+		Since there are only $n+1$ fraction bits available, we must drop $b$, and hence,
+		approximate the exact number by $1.f_{n-1}f_{n-2}\cdots f_1f_0\times 2^{n+1}$.
+		If $b$ is 0, then the approximation matches the exact value. If $b$ is 1, then
+		the approximation is not exact. Hence, the formula for the smallest value that
+		cannot be represented exactly requires $b=1$. We make it as small as possible
+		by setting the rest of the fraction bits to 0:
+		\begin{align*}
+			1.00\cdots 01\times 2^{n+1}
+		\end{align*}
+		so the smallest number that cannot be represented is $2^{n+1}+1$.
+		\item With $n=23$, we have $2^{24}+1=16,777,217_{10}$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.50}
+	Show how the following binary fractional values would be rounded to the nearest
+	half (1 bit to the right of the binary point), according to the round-to-even
+	rule. In each case, show the numeric values, both before and after rounding.
+	\begin{enumerate}[label=(\alph*)]
+		\item $10.010_2$
+		\item $10.011_2$
+		\item $10.110_2$
+		\item $11.001_2$
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	Recall that if we have a bit pattern of the form $XX\cdots X.YY\cdots Y100\cdots$,
+	where $X$ and $Y$ denote arbitrary bit values with the rightmost $Y$ being the
+	position to which we wish to round, then only bit patterns of this form denote
+	values that are halfway between two possible results (with the $100\cdots$ after $Y$).
+	\begin{enumerate}[label=(\alph*)]
+		\item The given number is $2\frac{1}{4}$. We see $10$ after the half, so
+		we are halfway between two values, which means we round-to-even, that is, we
+		round-to-even by rounding down, to retain the rightmost 0, and hence get
+		an ``even" result: $10.0_2$. The result afterwards is $2_{10}$. As you can 
+		see, $2\frac{1}{4}$ is halfway between $2$ and $2\frac{1}{2}$.
+		\item The starting value is $2.375$. This time we do not have a number
+		halfway between values. We round up and get $10.100_2$, or equivalently, $2.5_{10}$.
+		\item The starting value is $2.75_{10}$. Here we have $10_2$ after the 1 on the
+		half position, so we round-to-even by rounding up so that we end up with an
+		``even result". We get $11.000_2$ and obtain $3.0_{10}$.
+		\item The starting value is $3.125_{10}$. It is not halfway between two
+		numbers so we round down towards $11.0_2$, or equivalently, $3.0$
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.51}
+	We saw in Problem 2.46 that the Patriot missile software approximated 0.1 as
+	$x=0.00011001100110011001100_2$. Suppose instead that they had used IEEE round-to-even
+	mode to determine an approximation $x'$ to 0.1 with 23 bits to the right of the
+	binary point.
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the binary representation of $x'$?
+		\item What is the approximate decimal value of $x'-0.1$?
+		\item How far off would the computed clock have been after 100 hours of
+		operation?
+		\item How far off would the program's prediction of the position of the
+		Scud missile have been?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Recall that $0.1$ has a non-terminating binary representation
+		$0.000110011[0011]\cdots_2$. Below we show the number with 23 bits
+		after binary point as bold:
+		\[
+		0.\textbf{00011001100110011001100}1100[1100]\cdots
+		\]
+		Since it is not halfway between two values, and the value right of the 23rd
+		fractional bit is 1, we round up and get
+		\begin{align*}
+			x'=0.00011001100110011001101_2
+		\end{align*}
+		\item The value of $x'-0.1$ involves evaluating the subtraction
+		\begin{align*}
+			&0.\textbf{00011001100110011001101}_2-0.\textbf{00011001100110011001100}1100[1100]\cdots_2\\
+			&=0.\textbf{00000000000000000000001}_2-0.\textbf{0000000000000000000000}[1100]\cdots_2
+		\end{align*}
+		We can replace the sequence terminating in 1 at the 23rd place with a non-terminating
+		sequence with all 1s starting at the 24th place. After subtracting, we get
+		\begin{align*}
+			0.\textbf{00000000000000000000000}00[1100]\cdots_2
+		\end{align*}
+		Looking back at the original representation of 0.1, this is a shift of it by 22 places
+		to the right. Therefore, the value of $x'-1$ is
+		$\frac{1}{10}\times 2^{-22}\approx 2.38\times 10^{-8}$.
+		\item Since 100 hours is $100\cdot 60\cdot 60=360,000$ seconds, and it increments once
+		every $0.1$ seconds, it means that it incremented $3,600,000$ times, so
+		$2.38\times 10^{-8}\times 3,600,000\approx 0.0858$.
+		\item The discrepancy would have been approximately $0.858\cdot 2000\approx 172$ meters.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{2.52}
+	Consider the following two 7-bit floating-point representations based on the IEEE
+	floating-point format. Neither has a sign bit --- they can only represent non-negative
+	numbers.
+	\begin{enumerate}
+		\item Format A:
+		\begin{itemize}
+			\item There are $k=3$ exponent bits. The exponent bias is 3.
+			\item There are $n=4$ fraction bits.
+		\end{itemize}
+		\item Format B:
+		\begin{itemize}
+			\item There are $k=4$ exponent bits. The exponent bias is 7.
+			\item There are $n=3$ fraction bits.
+		\end{itemize}
+	\end{enumerate}
+	Below, you are given some bit patterns in format A, and your task is to convert them
+	to the closest value in format B. If necessary, you should apply the round-to-even
+	rounding rule. In addition, give the values of numbers given by the format A and format
+	B bit patterns. Give these as whole numbers (e.g., 17) or as fractions (e.g., 17/64).
+	\begin{center}
+		\begin{tabular}{cc|cc}
+			\multicolumn{2}{c}{Format A} & \multicolumn{2}{c}{Format B}\\
+			\hline
+			Bits & Value & Bits & Value\\
+			\hline
+			\texttt{011 0000} & 1 & \texttt{0111 000} & 1 \\
+			
+			\texttt{101 1110} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{010 1001} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{110 1111} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{000 0001} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	First we fill the entries under Format A.
+	\begin{itemize}
+		\item \texttt{101 1110}: The exponent
+		is $e=\texttt{101}_2$, so $e=5$, and it is a normalized value so $E=e-Bias$,
+		or $E=5-3=2$. Then $f=\texttt{0.1110}_2=\frac{7}{8}$, so $M=1+f=\frac{15}{8}$.
+		The value is $2^E\cdot M=2^{2}\cdot \frac{15}{8}=\frac{15}{2}$.
+		\item \texttt{010 1001}: we have $e=010_2=2_{10}$ and $f=0.1001_2=\frac{9}{16}$.
+		Now $M=1+f=\frac{25}{16}$, and $E=2-3=-1$, so 
+		$V=2^E\times M=2^{-1}\cdot \frac{25}{16}=\frac{25}{32}$.
+		\item \texttt{110 1111}: Here $e=110_2=6_{10}$ and $f=0.1111_2=\frac{15}{16}$.
+		Now $M=1+f=\frac{31}{16}$ and $E=6-3=3$, so $V=2^{3}\cdot \frac{31}{16}=\frac{31}{2}$.
+		\item Since the exponent is all 0s, this is a denormalized value. The fraction
+		is $f=0.0001_2=\frac{1}{16}$, and $M=f$. Since $e=0$, we have $E=1-bias=1-3=-2$,
+		so $V=2^{E}\cdot M=2^{-2}\cdot \frac{1}{16}=\frac{1}{64}$. 
+	\end{itemize}
+	We now attempt to convert them to format B:
+	\begin{itemize}
+		\item $\frac{15}{2}$: The representation for $15$ is $1111.0_2$, so by shifting
+		the binary place right we obtain the representation for $\frac{15}{2}$, namely,
+		$111.10_2=111.1_2=1.111\times 2^2$. The exponent is $2$, so we add the bias of
+		$7$ to get $e=9_{10}=1001_2$. We drop the leading 1, and we end up with
+		\[
+		\texttt{0 1001 111}
+		\]
+		\item $\frac{25}{32}$: The representation of $25$ is $11001_2$. Since $\frac{1}{32}$
+		is $2^{-5}$, we shift left 5 times to get $0.11001_2=1.1001\times 2^{-1}$. Since
+		we only have 3 fraction bits available, we must round $1.1001$ to even, so
+		we round down to $1.100_2$. Hence, we have
+		\[\frac{25}{32}\approx 1.100\cdot 2^{-1}=\frac{1}{2}+\frac{1}{4}=\frac{3}{4}\]
+		We add the bias of $7$ to get $e=-1+7=6=0110_2$. We drop the leading 1, and end up with
+		\[
+		\texttt{0 0110 100}_2
+		\]
+		\item $\frac{31}{2}$: The representation of $31$ is $11111_2$. Since $\frac{1}{2}=2^{-1}$,
+		we shift the binary point left 1 time to get $1111.1_2$. We shift left until there is only
+		one digit before the binary point, yielding $1.1111_2\cdot 2^{3}$. Since we only have
+		3 fraction bits, we must round $1.1111_2$, which rounds up to $10.000_2$. Hence,
+		we now have
+		\[
+		\frac{31}{2}\approx 10.000_2\cdot 2^{3}=1.000_2\cdot 2^{4}=16
+		\]
+		We add the bias of $7$ to get $e=4+7=11=1011_2$ We drop the leading 1, and end
+		up with
+		\[
+		\texttt{0 1011 000}_2
+		\]
+		\item $\frac{1}{64}$: This value is $2^{-6}$, so the binary representation
+		is $1.0\times 2^{-6}$. Here, $e=-6+7=1$, and after dropping the leading 1, we get
+		\[
+		\texttt{0 0001 000}
+		\]
+	\end{itemize}
+	The table below summarizes all values.
+	\begin{center}
+		\def\arraystretch{1.25}
+		\begin{tabular}{cc|cc}
+			\multicolumn{2}{c}{Format A} & \multicolumn{2}{c}{Format B}\\
+			\hline
+			Bits & Value & Bits & Value\\
+			\hline
+			\texttt{011 0000} & 1 & \texttt{0111 000} & 1 \\
+			
+			\texttt{101 1110} & $\frac{15}{2}$ & \texttt{0 1001 111} & $\frac{15}{2}$\\
+			
+			\texttt{010 1001} & $\frac{25}{32}$ & \texttt{0 0110 100} & $\frac{3}{4}$\\
+			
+			\texttt{110 1111} & $\frac{31}{2}$ & \texttt{0 1011 000} & 16\\
+			
+			\texttt{000 0001} & $\frac{1}{64}$ & \texttt{0 0001 000} & $\frac{1}{64}$\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{2.53}
+	Fill in the following macro definitions to generate the double-precision values $+\infty$,
+	$-\infty$, and $-0$:
+	
+	\begin{lstlisting}
+#define POS_INFINITY
+#define NEG_INFINITY
+#define NEG_ZERO
+	\end{lstlisting}
+	You cannot use any include files (such as \texttt{math.h}), but you can make use of
+	the fact that the largest finite number that can be represented with double precision
+	is around $1.8\times 10^{308}$.
+\end{ex}
+
+\begin{sol}
+	\
+	See code listing \texttt{./53-special-doubles/special.h}.
+	\lstinputlisting{./53-special-doubles/special.h}
+\end{sol}
+
+\begin{ex}{2.54}
+	Assume variables \texttt{x}, \texttt{f}, and \texttt{d} are of type \texttt{int},
+	\texttt{float}, and \texttt{double}, respectively. Their values are arbitrary,
+	except that neither \texttt{f} nor \texttt{d} equals $+\infty, -\infty$, or
+	\emph{NaN}. For each of the following C expressions, either argue that it will
+	always be true (i.e., evaluates to 1) or give a value for the variables such that
+	it is not true (i.e., evaluates to 0).
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{x == (int)(double) x}
+		\item \texttt{x == (int)(float) x}
+		\item \texttt{d == (double)(float) d}
+		\item \texttt{f == (float)(double) f}
+		\item \texttt{f == -(-f)}
+		\item \texttt{1.0/2 == 1/2.0}
+		\item \texttt{d*d >= 0.0}
+		\item \texttt{(f+d)-f == d}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Since \texttt{x} is an \texttt{int}, its value is preserved when cast to
+		a \texttt{double}, and back to an \texttt{int}. This expression is always true.
+		\item Due to the limited precision of \texttt{float}, rounding may occur. For
+		example, we explored how the smallest value that cannot be represented by a
+		\texttt{float} is $2^{24}+1$. If \texttt{int} is 32-bit, then its values
+		ranged from $-2^{-31}$ to $2^{31}-1$, so it can attain $2^{24}+1$ as a value.
+		In the event this happens, the rounding alters the value of \texttt{x},
+		and so will the cast back from \texttt{float} to \texttt{int}. The expression
+		is will be false.
+		\item If \texttt{d} is a value beyond $3.4\times 10^{38}$, then cast to a
+		\texttt{float} will overflow to $+\infty$. The expression leads to false.
+		\item This is always true because \texttt{d} can hold any \texttt{float}.
+		Therefore when cast back to \texttt{float}, it remains unchanged.
+		\item This is always true; the sign bit flips.
+		\item True because 2 is cast to a \texttt{float} in \texttt{1.0/2} and 1 is
+		cast to a \texttt{float} in \texttt{1/2.0}.
+		\item Since \texttt{int} to \texttt{float} cannot overflow, we are assured
+		that the number will be non-negative.
+		\item  Let \texttt{f} be $3.4e38$, the largest normalized value, and let
+		\texttt{d} be 1. Then \texttt{f + d} overflows to $+\infty$, and now
+		$\infty-\texttt{f}$ does not equal \texttt{d}.
+	\end{enumerate}
+\end{sol}
 \end{document}
