@@ -1,0 +1,509 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 3: Machine-Level Representation of Programs
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{3.1}
+	Assume the following values are stored at the indicated memory addresses and registers:
+	\begin{center}
+		\begin{tabular}{cccc}
+			Address & Value & Register & Value\\
+			\hline
+			\texttt{0x100} & \texttt{0xFF} & \texttt{\%rax} & \texttt{0x100}\\
+			\texttt{0x104} & \texttt{0xAB} & \texttt{\%rcx} & \texttt{0x1}\\
+			\texttt{0x108} & \texttt{0x13} & \texttt{\%rdx} & \texttt{0x3}\\
+			\texttt{0x10C} & \texttt{0x11}
+		\end{tabular}
+	\end{center}
+	Fill in the following table showing the values for the indicated operands:
+	\begin{center}
+		\begin{tabular}{cc}
+			Operand & Value\\
+			\hline
+			\texttt{\%rax} & \makebox[1cm]{\hrulefill}\\
+			\texttt{0x104} & \makebox[1cm]{\hrulefill}\\
+			\texttt{\$0x108} & \makebox[1cm]{\hrulefill}\\
+			\texttt{(\%rax)} & \makebox[1cm]{\hrulefill}\\
+			\texttt{4(\%rax)} & \makebox[1cm]{\hrulefill}\\
+			\texttt{9(\%rax, \%rdx)} & \makebox[1cm]{\hrulefill}\\
+			\texttt{260(\%rcx, \%rdx)} & \makebox[1cm]{\hrulefill}\\
+			\texttt{0xFC(,\%rcx,4)} & \makebox[1cm]{\hrulefill}\\
+			\texttt{(\%rax,\%rdx,4)} & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	To start, \texttt{\%rax} is a 64-bit register conventionally used to store a return value.
+	Its value is \texttt{0x100}. Next, \texttt{0x104} looks like an immediate but it is not preceded
+	by \texttt{\$}, so it is in fact an absolute memory address. Its operand value is \texttt{0xAB}.
+	Next is \texttt{\$0x108}, which is an immediate since it is preceded by a \texttt{\$}, so its
+	value is \texttt{0x108}. The operand \texttt{(\%rax)} is a an type of memory reference, specifically
+	an indirect one. Therefore, the value \texttt{0x100} of \texttt{\%rax} is used as an address,
+	yielding \texttt{0xFF}. The \texttt{4(\%rax)} operand is a memory operand where \texttt{4} is an immediate
+	treated as an offset, and \texttt{\%rax} is treated as the base. Therefore the address is
+	\texttt{4} added to \texttt{0x100}, yielding \texttt{0x104}. Accessing the memory value
+	at that address yields \texttt{0xAB}. Next, \texttt{9(\%rax, \%rdx)} is an indexed memory reference,
+	where \texttt{\%rax} is the base, \texttt{\%rdx} is the 64-bit index register (normally used as a
+	3rd argument for a procedure), and \texttt{9} is an immediate offset. The memory address is thus
+	\texttt{9 + 0x100 + 0x3}. The resulting is memory address \texttt{0x10C}, and the corresponding value
+	is \texttt{0x11}. Now \texttt{260(\%rcx, \%rdx)}, which is similar; the address is
+	\texttt{260+0x1+0x3} which is \texttt{264} or \texttt{0x108}, and its value is
+	\texttt{0x13}. Next \texttt{0xFC(,\%rcx,4)}, which is a scaled index memory reference.
+	We scale the address in the index register \texttt{\%rcx} by \texttt{4}, so it becomes
+	\texttt{0x4}, and then add to it the immediate \texttt{0xFC} to give an address \texttt{0x100}.
+	The value is now determined to be \texttt{0xFF}. Finally, \texttt{(\%rax,\%rdx,4)} is a
+	scaled indexed memory reference, with address \texttt{0x100} in the base register \texttt{\%rax}
+	and value \texttt{0x3} in register \texttt{\%rdx} scaled by \texttt{4} to give address
+	\texttt{0x10C}. The value is \texttt{0x11}.
+	
+	\begin{center}
+		\begin{tabular}{cc}
+			Operand & Value\\
+			\hline
+			\texttt{\%rax} & \texttt{0x100}\\
+			\texttt{0x104} & \texttt{0xAB}\\
+			\texttt{\$0x108} & \texttt{0x108}\\
+			\texttt{(\%rax)} & \texttt{0xFF}\\
+			\texttt{4(\%rax)} & \texttt{0xAB}\\
+			\texttt{9(\%rax, \%rdx)} & \texttt{0x11}\\
+			\texttt{260(\%rcx, \%rdx)} & \texttt{0x13}\\
+			\texttt{0xFC(,\%rcx,4)} & \texttt{0xFF}\\
+			\texttt{(\%rax,\%rdx,4)} & \texttt{0x11}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.2}
+	For each of the following lines of assembly language, determine the appropriate suffix
+	based on the operands. (For example, \texttt{mov} can be rewritten as \texttt{movb},
+	\texttt{movw}, \texttt{movl}, or \texttt{movq}.)
+	\begin{center}
+		\begin{tabular}{ccc}
+			\texttt{mov}\makebox[0.5cm]{\hrulefill} & \texttt{\%eax,} & \texttt{(\%rsp)}\\
+			\texttt{mov}\makebox[0.5cm]{\hrulefill} & \texttt{(\%rax),} & \texttt{\%dx}\\
+			\texttt{mov}\makebox[0.5cm]{\hrulefill} & \texttt{\$0xFF,} & \texttt{\%bl}\\
+			\texttt{mov}\makebox[0.5cm]{\hrulefill} & \texttt{(\%rsp,\%rdx,4),} & \texttt{\%dl}\\
+			\texttt{mov}\makebox[0.5cm]{\hrulefill} &\texttt{(\%rdx),} & \texttt{\%rax}\\
+			\texttt{mov}\makebox[0.5cm]{\hrulefill} & \texttt{\%dx,} & \texttt{(\%rax)}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The \texttt{\%eax} source register is 32-bit (a double word) and conventionally used as a return value,
+	while the \texttt{\%rsp} destination register is 64-bit (a quad word) and conventionally used as
+	the stack pointer. Therefore we can use the \texttt{movl} instruction, where the \texttt{l} suffix
+	indicates we are moving a double word.
+	
+	\
+	
+	The \texttt{(\%rax)} is a n indirect memory reference using the address in the 64-bit (quad-word) \texttt{\%rax}
+	source register (conventionally used as a return address), and the destination 16-bit (word)
+	register \texttt{\%dx} (conventionally the 3rd argument in a procedure). This means we should use
+	\texttt{movw}, since we are moving a single word.
+	
+	\
+	
+	The \texttt{\$0xFF} source operand is an 8-bit immediate, and the destination \texttt{\%bl} is an
+	8-bit (byte) register (conventionally callee-saved). For this we use \texttt{movb}.
+	
+	\
+	
+	The \texttt{(\%rsp\%rdx,4)} is the source, and it is a scaled index memory reference using
+	the 64-bit (quad word) stack pointer register \texttt{\%rsp} as the base address, the 64-bit
+	(quad word) 3rd-argument register as the index register, and the scale factor \texttt{4}.
+	The destination is \texttt{\%dl}, the 8-bit (byte) 3rd argument register. For this we must
+	use \texttt{movb}.
+	
+	\
+	
+	The \texttt{(\%rdx)}  operand is an indirect memory reference using the 64-bit (quad word)
+	register \texttt{\%rdx} (conventionally representing the 3rd argument) as the address.
+	The destination is the 64-bit (quad word) register \texttt{\%rax} normally used for the
+	return value. We can use \texttt{movq} in this case.
+	
+	\
+	
+	Finally, we have source operand \texttt{\%dx}, the 16-bit (word) third argument, and
+	destination indirect memory reference using the address of the 64-bit (quad word)
+	return value  register \texttt{\%rax}. We use \texttt{movw} in this case.
+	\begin{center}
+		\begin{tabular}{ccc}
+			\texttt{movl} & \texttt{\%eax,} & \texttt{(\%rsp)}\\
+			\texttt{movw} & \texttt{(\%rax),} & \texttt{\%dx}\\
+			\texttt{movb}& \texttt{\$0xFF,} & \texttt{\%bl}\\
+			\texttt{movb} & \texttt{(\%rsp,\%rdx,4),} & \texttt{\%dl}\\
+			\texttt{movq} &\texttt{(\%rdx),} & \texttt{\%rax}\\
+			\texttt{movw} & \texttt{\%dx,} & \texttt{(\%rax)}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.3}
+	Each of the following lines of code generates an error when we invoke the assembler.
+	Explain what is wrong with each line.
+	\begin{center}
+		\begin{tabular}{ccc}
+			\texttt{movb} & \texttt{\$0xF,} & \texttt{(\%ebx)}\\
+			\texttt{movl} & \texttt{\%rax,} & \texttt{(\%rsp)}\\
+			\texttt{movw} & \texttt{(\%rax),} &\texttt{4(\%rsp)}\\
+			\texttt{movb} & \texttt{\%al,} & \texttt{\%sl}\\
+			\texttt{movq} & \texttt{\%rax,} & \texttt{\$0x123}\\
+			\texttt{movl} & \texttt{\%eax,} & \texttt{\%dx}\\
+			\texttt{movq} & \texttt{\%si,} & \texttt{8(\%rbp)}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The instruction \texttt{movb} \texttt{\$0xF,} \texttt{(\%ebx)} has as a destination operand
+	the indirect memory reference \texttt{(\%ebx)}, where \texttt{\%ebx} is a 32-bit register.
+	When a register is used in a memory addressing mode, its must be 64-bit; see page 181.
+	We could fix the instruction by changing the destination operand to \texttt{(\%rbx)}.
+	
+	\
+	
+	For \texttt{movl \%rax, (\%rsp)}, we have 64-bit (quad word) operands, but the \texttt{movl}
+	instruction is meant to work with double words (32-bit, as indicated by the suffix \texttt{l}).
+	
+	
+	\
+	
+	The instruction \texttt{movw (\%rax), 4(\%rsp)} is meant to work with 16-bit operands, as indicate
+	by the word suffix \texttt{w}. However, its values are both 64-bit operands. Nevertheless,
+	both operands are memory references, which is forbidden by x86-64; see page 183.
+	
+	\
+	
+	The instruction \texttt{movb \%al, \%sl} has an invalid register \texttt{\%sl}. The intention
+	may have been \texttt{\%spl} for stack pointer or maybe \texttt{\%sil} for the second argument,
+	but it's not clear.
+	
+	\
+	
+	The instruction \texttt{movq \%rax, \$0x123} has an immediate as a destination, which is not
+	allowed; only a register or a memory reference may be used as a destination.
+	
+	\
+	
+	The instruction \texttt{movl \%eax, \%dx} has a 32-bit source register and a 16-bit destination
+	register. The \texttt{movl} instruction works with double words (32-bit) operands, so the
+	destination register is incompatible. A fix would be use to use \texttt{movw}, where the
+	\texttt{w} suffix indicates a word (16-bits).
+	
+	The instruction \texttt{movq \%si, 8(\%rbp)} has an 8-bit (byte) source operand register,
+	which is incompatible with \texttt{movq} which operates on quad words (64-bit).
+\end{sol}
+
+\begin{ex}{3.4}
+	Assume variables \texttt{sp} and \texttt{dp} are declared with types
+	\begin{lstlisting}
+		src_t *sp;
+		dest_t *dp;
+	\end{lstlisting}
+	where \texttt{src\_t} and \texttt{dest\_t} are types declared with \texttt{typedef}. We wish
+	to use the appropriate pair of data movement instructions to implement the operation
+	\begin{lstlisting}
+		*dp = (dest_t) *sp;
+	\end{lstlisting}
+	Assume that the values of \texttt{sp} and \texttt{dp} are stored in registers \texttt{\%rdi} and
+	\texttt{\%rsi}, respectively. For each entry in the table, show the two instructions that implement
+	the specified data movement. The first instruction in the sequence should read from memory, do the
+	appropriate conversion, and set the appropriate portion of register \texttt{\%rax}. The second
+	instruction should then write the appropriate portion of \texttt{\%rax} to memory. In both cases,
+	the portions may be \texttt{\%rax, \%eax, \%ax,} or \texttt{\%al}, and they may differ from one
+	another.
+	\
+	Recall that when performing a cast that involves a size change and a change of ``signedness" in C,
+	the operation should change the size first (Section 2.2.6).
+	\begin{center}
+		\begin{tabular}{ccc}
+			\texttt{src\_t} & \texttt{dest\_t} & Instruction\\
+			\hline
+			\texttt{long} & \texttt{long} & \texttt{movq} \texttt{(\%rdi),} \texttt{\%rax}\\
+			{} & {} & \texttt{movq} \texttt{\%rax,} \texttt{(\%rsi)} \\
+			\texttt{char} & \texttt{int}  & \makebox[1cm]{\hrulefill}\\
+			{} & {} & \makebox[1cm]{\hrulefill}\\
+			\texttt{char} & \texttt{unsigned} & \makebox[1cm]{\hrulefill}\\
+			{} & {} & \makebox[1cm]{\hrulefill}\\
+			\texttt{unsigned char} & \texttt{long} & \makebox[1cm]{\hrulefill}\\
+			{} & {} & \makebox[1cm]{\hrulefill}\\
+			\texttt{int} & \texttt{char} & \makebox[1cm]{\hrulefill}\\
+			{} & {} & \makebox[1cm]{\hrulefill}\\
+			\texttt{unsigned} & \texttt{unsigned char} & \makebox[1cm]{\hrulefill}\\
+			{} & {} & \makebox[1cm]{\hrulefill}\\
+			\texttt{char} & \texttt{short} & \makebox[1cm]{\hrulefill}\\
+			{} & {} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	We will take \texttt{long} to be signed and 64 bit (quad word, 8 bytes), \texttt{int}
+	to be signed and 32 bit (double word, 4 bytes), \texttt{unsigned} to be 32-bit and unsigned,
+	\texttt{char} to be signed and 1 byte (8-bit), and \texttt{unsigned char} to be unsigned and 1 byte,
+	and \texttt{short} to be 1 word (2 bytes or 16-bits).
+	
+	\
+	
+	Going from a source \texttt{char} of 1 byte to a destination \texttt{int} of 4 bytes
+	requires using \texttt{movzbl}, since both operands are signed. Since the destination
+	is 4 bytes (two words, 32-bit), we use the 32-bit \texttt{\%eax} register.
+	
+	\
+	From signed \texttt{char} of 1 byte to \texttt{unsigned} of 4 bytes requires
+	using \texttt{movsbl}. This is because the operation should change the size first, so
+	since \texttt{char} is signed, we keep its ``signness" by using \texttt{movsbl} and not
+	\texttt{movzbl}. Since the destination is 4 bytes, we use \texttt{movl} for the second operation.
+	
+	\
+	
+	From \texttt{unsigned char} of 1 byte to \texttt{long} which is signed and has 8 bytes (64-bit)
+	requires that we change the size first, maintaining the signness. This suggests we use a move
+	with the \texttt{z} suffix, since the source is unsigned so we should zero extend.
+	Since we want a 64-bit result, we could use \texttt{movzbq} with \texttt{\%rax} as the
+	destination register. Then the last move simply uses \texttt{movq}. The book also
+	uses \texttt{movzbl} \texttt{(\%rdi),} \texttt{\%eax}. This is valid because whenever
+	the destination register of a \texttt{movl} instruction is a register, it also sets the
+	high-order 4 bytes of the register to 0 (see page 183).
+	
+	\
+	
+	From signed \texttt{int} of 4 bytes to signed \texttt{char} of 1 byte, we truncate
+	by using \texttt{movb} to move only the lowest order byte and the 8-bit \texttt{\%al} register.
+	
+	\
+	
+	From \texttt{unsigned} of 4 bytes to \texttt{unsigned char} of 1 byte, we truncate
+	again by using \texttt{movb} and the \texttt{\%al} register.
+	
+	Finally, from (signed) \texttt{char} of 1 byte to (signed) \texttt{short} of 2 bytes,
+	we sign-extend and we use \texttt{movsbw} with the \texttt{\%ax} register.
+	\begin{center}
+		\begin{tabular}{ccc}
+			\texttt{src\_t} & \texttt{dest\_t} & Instruction\\
+			\hline
+			\texttt{long} & \texttt{long} & \texttt{movq} \texttt{(\%rdi),} \texttt{\%rax}\\
+			{} & {} & \texttt{movq} \texttt{\%rax,} \texttt{(\%rsi)} \\
+			
+			\texttt{char} & \texttt{int}  & \texttt{movsbl} \texttt{(\%rdi),} \texttt{\%eax}\\
+			{} & {} & \texttt{movl} \texttt{\%eax,} \texttt{(\%rsi)}\\
+			
+			
+			\texttt{char} & \texttt{unsigned} & \texttt{movsbl} \texttt{(\%rdi),} \texttt{\%eax}\\
+			{} & {} & \texttt{movl} \texttt{\%eax} \texttt{\%rsi}\\
+			
+			\texttt{unsigned char} & \texttt{long} & \texttt{movzbq} \texttt{(\%rdi),} \texttt{\%rax}\\
+			{} & {} & \texttt{movq} \texttt{\%rax,} \texttt{(\%rsi)}\\
+			
+			\texttt{int} & \texttt{char} & \texttt{movb} \texttt{(\%rdi),} \texttt{\%al}\\
+			{} & {} & \texttt{movb} \texttt{\%al,} \texttt{(\%rsi)}\\
+			
+			\texttt{unsigned} & \texttt{unsigned char} & \texttt{movb} \texttt{(\%rdi),} \texttt{\%al}\\
+			{} & {} & \texttt{movb} \texttt{\%al,} \texttt{(\%rsi)}\\
+			
+			\texttt{char} & \texttt{short} & \texttt{movsbw} \texttt{(\%rdi),} \texttt{\%ax}\\
+			{} & {} & \texttt{movw} \texttt{\%ax,} \texttt{(\%rsi)}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.5}
+	You are given the following information. A function with prototype
+	\begin{lstlisting}[language={}]
+			void decode1(long *xp, long *yp, long *zp)
+			xp in \%rdi,
+		decode1:
+			movq	(%rdi),	%r8
+			movq	(%rsi),	%rcx
+			movq	(%rdx),	%rax
+			movq	%r8,	(%rsi)
+			movq	%rcx,	(%rdx)
+			movq	%rax,	(%rdi)
+			ret
+	\end{lstlisting}
+	Parameters \texttt{xp}, \texttt{yp}, and \texttt{zp} are stored in registers \texttt{\%rdi},
+	\texttt{\%rsi}, and \texttt{\%rdx}, respectively. Write C code for \texttt{decode1} that will
+	have an effect equivalent to the assembly code shown.
+\end{ex}
+
+\begin{sol}
+	\
+	The indirect memory reference \texttt{(\%rdi)} dereferences \texttt{xp}, yielding its value
+	\texttt{*xp},and storing it in register \texttt{\%r8}, conventionally used as the 5th argument
+	of a procedure. This amounts to storing the value in a local variable \texttt{t} 
+	of the same type \texttt{long}. Similarly, \texttt{(\%rsi)} is an indirect memory references 
+	that effectively dereferences \texttt{yp}, yielding its value \texttt{*yp} and storing it
+	in register \texttt{\%rcx}, normally used for a procedure's 4th argument. In C, this might
+	be storing its in a local variable \texttt{s} of type \texttt{long}. The third memory reference
+	\texttt{(\%rdx)} serves to dereference \texttt{zp}, placing its value \texttt{*zp} in the
+	\texttt{\%rax} register, conventionally used for a return value of a procedure. Now the
+	value stored in register \texttt{\%r8} is stored at the location in memory pointed to by
+	the \texttt{\%rsi} register. This is equivalent to the assignment statement \texttt{*yp = t}.
+	Next, the value in register \texttt{\%rcx} is moved to the memory location pointed to by
+	\texttt{\%rdx}, which is equivalent to the statement \texttt{*zp = s}. Finally, the value
+	in the return register \texttt{\%rax} is placed at the memory location pointed to by register
+	\texttt{\%rdi}, which is equivalent to setting \texttt{*xp} to the value initially held by
+	\texttt{*zp}.
+	
+	The program below implements the C equivalent:
+	\begin{lstlisting}
+		void decode1(long *xp, long *yp, long *zp) {
+			long t = *xp;
+			long s = *yp;
+			long r = *zp;
+			*yp = t;
+			*zp = s;
+			*xp = r;
+			return r;
+		}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.6}
+	Suppose register \texttt{\%rax} holds value $x$ and \texttt{\%rcx} holds value $y$. Fill in the
+	table below with formulas indicating the value that will be stored in register \texttt{\%rdx}
+	for each of the given assembly-code instructions.
+	\begin{center}
+		\begin{tabular}{cc}
+			Instruction & Result\\
+			\hline
+			\texttt{leaq} \texttt{6(\%rax),} \texttt{rdx} & \makebox[1cm]{\hrulefill}\\
+			\texttt{leaq} \texttt{(\%rax,\%rcx),} \texttt{\%rdx} & \makebox[1cm]{\hrulefill}\\
+			\texttt{leaq} \texttt{(\%rax,\%rcx,4),} \texttt{\%rdx} & \makebox[1cm]{\hrulefill}\\
+			\texttt{leaq} \texttt{7(\%rax,\%rax,8),} \texttt{\%rdx} & \makebox[1cm]{\hrulefill}\\
+			\texttt{leaq} \texttt{0xA(,\%rcx,4),} \texttt{\%rdx} & \makebox[1cm]{\hrulefill}\\
+			\texttt{leaq} \texttt{9(\%rax,\%rcx,2),} \texttt{\%rdx} & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	
+	For \texttt{leaq} \texttt{6(\%rax),} \texttt{rdx}, the memory address used in the memory
+	reference operand is that stored at \texttt{\%rax}, which has value $x$ offset by \texttt{6}.
+	Therefore, the result is that register \texttt{\%rdx} has value $x+6$. The rest can be done
+	similarly.
+	\begin{center}
+		\begin{tabular}{cc}
+			Instruction & Result\\
+			\hline
+			\texttt{leaq} \texttt{6(\%rax),} \texttt{\%rdx} & $x+6$\\
+			\texttt{leaq} \texttt{(\%rax,\%rcx),} \texttt{\%rdx} & $x+y$\\
+			\texttt{leaq} \texttt{(\%rax,\%rcx,4),} \texttt{\%rdx} & $x+4y$\\
+			\texttt{leaq} \texttt{7(\%rax,\%rax,8),} \texttt{\%rdx} & $7+x+8x=9x+7$\\
+			\texttt{leaq} \texttt{0xA(,\%rcx,4),} \texttt{\%rdx} & $10+4y$\\
+			\texttt{leaq} \texttt{9(\%rax,\%rcx,2),} \texttt{\%rdx} & $9+x+2y$
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.7}
+	Consider the following code, in which we have omitted the expression being computed:
+	
+	\begin{lstlisting}
+long scale2(long x, long y, long z) {
+	long t = ___________;
+	return t;
+}
+	\end{lstlisting}
+	Compiling the actual function with \texttt{gcc} yields the following assembly code:
+	\begin{lstlisting}[language={}]
+	long scale2(long x, long y, long z)
+	x in %rdi, y in %rsi, z in %rdx
+scale2:
+	leaq	(%rdi,%rdi,4),	%rax
+	leaq	(%rax,%rsi,2),	%rax
+	leaq	(%rax,%rdx,8),	%rax
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The first line places $5x=x+4x$ in \texttt{\%rax}. The second line places $5x+2y$ in
+	\texttt{\%rax}. The last line places $5x+2y+8z$ in \texttt{\%rax}. The function is therefore as follows:
+	\begin{lstlisting}
+long scale2(long x, long y, long z) {
+	long t = 5x + 2y + 8z;
+	return t;
+}
+	\end{lstlisting}
+\end{sol}
+
+\end{document}
