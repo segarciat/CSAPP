@@ -506,4 +506,252 @@ long scale2(long x, long y, long z) {
 	\end{lstlisting}
 \end{sol}
 
+\begin{ex}{3.8}
+	Assume the following values are stored at the indicated memory addresses and registers:
+	\begin{center}
+		\begin{tabular}{cccc}
+			Address & Value & Register & Value \\
+			\hline
+			\texttt{0x100} & \texttt{0xFF} & \texttt{\%rax} & \texttt{0x100}\\
+			\texttt{0x108} & \texttt{0xAB} & \texttt{\%rcx} & \texttt{0x1}\\
+			\texttt{0x110} & \texttt{0x13} & \texttt{\%rdx} & \texttt{0x3}\\
+			\texttt{0x118} & \texttt{0x11}
+		\end{tabular}
+	\end{center}
+	Fill in the following table showing the effects of the following instructions in terms of
+	both the register or memory location that will be updated and the resulting value:
+	\begin{center}
+		\begin{tabular}{ccc}
+			Instruction & Destination & Value\\
+			\hline
+	\texttt{addq} \texttt{\%rcx,} \texttt{(\%rax)} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+	\texttt{subq} \texttt{\%rdx,} \texttt{8(\%rax)} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+	\texttt{imulq} \texttt{\$16,} \texttt{(\%rax,\%rdx,8)} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+	\texttt{incq} \texttt{16(\%rax)} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+	\texttt{decq} \texttt{\%rcx} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+	\texttt{subq} \texttt{\%rdx,} \texttt{\%rax} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The \texttt{addq} \texttt{\%rcx,} \texttt{(\%rax)} instruction means that we add the quad
+	stored in register \texttt{\%rcx}, namely \texttt{0x1}, to the value store at the memory location
+	whose address is the value \texttt{0x100} stored at \texttt{\%rax}. This means we add \texttt{0x1}
+	and \texttt{0xFF}, which results in \texttt{0x100}, and store its value at address \texttt{0x100}.
+	
+	\
+	
+	The \texttt{subq} \texttt{\%rdx,} \texttt{8(\%rax)} instruction means we subtract the quad stored
+	in register \texttt{\%rdx}, which is \texttt{0x3}, from the value stored at the memory location
+	whose address is the value stored at \texttt{\%rax} offset by 8. Since \texttt{\%rax} has value
+	\texttt{0x100}, we add 8 to get \texttt{0x108}, and the value at that location is \texttt{0xAB}.
+	Subtracting \texttt{0x3} results in \texttt{0xA8}.
+	
+	\
+	
+	The \texttt{imulq} \texttt{\$16,} \texttt{(\%rax,\%rdx,8)} instruction means we multiply by
+	16 the value stored at the destination address. Since \texttt{\%rax} is \texttt{0x100} and
+	\texttt{\%rdx} is 3, the destination address is \texttt{0x100 + 0x18}, which yields \texttt{0x118}.
+	The value at that address is \texttt{0x11}, so multiplying by \texttt{16} yields \texttt{0x110}.
+	
+	\
+	
+	The \texttt{incq} \texttt{16(\%rax)} instruction says we increment by 1 the value stored at
+	memory location whose address is that which is stored at \texttt{\%rax} offset by 16.
+	The address is \texttt{0x100 + 16} or \texttt{0x110}, so we are incrementing \texttt{0x13} by
+	1 to \texttt{0x14}.
+	
+	\
+	
+	The \texttt{decq} \texttt{\%rcx} instruction decrements the value held in the \texttt{\%rcx}
+	register by 1, so \texttt{\%rcx} goes from being \texttt{0x1} to being \texttt{0x0}.
+	
+	\
+	
+	The \texttt{subq} \texttt{\%rdx,} \texttt{\%rax} instruction subtracts the value
+	stored at \texttt{\%rdx} from the value at \texttt{\%rax}. That is, we subtract \texttt{0x3}
+	from \texttt{0x100}, yielding \texttt{0xFD}.
+	\begin{center}
+		\begin{tabular}{ccc}
+			Instruction & Destination & Value\\
+			\hline
+	\texttt{addq} \texttt{\%rcx,} \texttt{(\%rax)} & \texttt{0x100} & \texttt{0x100}\\
+	\texttt{subq} \texttt{\%rdx,} \texttt{8(\%rax)} & \texttt{0x108} & \texttt{0xA8}\\
+	\texttt{imulq} \texttt{\$16,} \texttt{(\%rax,\%rdx,8)} & \texttt{0x118} & \texttt{0x110}\\
+	\texttt{incq} \texttt{16(\%rax)} & \texttt{0x110} & \texttt{0x14}\\
+	\texttt{decq} \texttt{\%rcx} & \texttt{\%rcx} & \texttt{0x0} \\
+	\texttt{subq} \texttt{\%rdx,} \texttt{\%rax} &\texttt{\%rax} & \texttt{0xFD}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.9}
+	Suppose we want to generate assembly code for the following C function:
+	\begin{lstlisting}
+long shift_left4_rightn(long x, long n)
+{
+	x <<= 4;
+	x >>= n;
+	return x;
+}
+	\end{lstlisting}
+	The code that follows is a portion of the assembly code that performs the actual shifts
+	and leaves the final value in register \texttt{\%rax}. Two key instructions have been
+	omitted. Parameters \texttt{x} and \texttt{n} are stored in registers \texttt{\%rdi}
+	and \texttt{\%rsi}, respectively.
+	\begin{lstlisting}[language={}]
+	long shift_left4_rightn(long x, long n)
+	x in %rdi, n in %rsi
+shift_left4_rightn:
+	movq	%rdi,	%rax	// Get x
+	____________________	// x <<=4
+	movl	%esi,	%ecx	// Get n (4 bytes)
+	____________________	// x >>= n
+	\end{lstlisting}
+	Fill in the missing instructions, following the annotations on the right. The right shift
+	should be performed arithmetically.
+\end{ex}
+
+\begin{sol}
+	\
+\begin{lstlisting}[language={}]
+	long shift_left4_rightn(long x, long n)
+	x in %rdi, n in %rsi
+shift_left4_rightn:
+	movq	%rdi,	%rax	// Get x
+	salq	$4,		%rax	// x <<=4
+	movl	%esi,	%ecx	// Get n (4 bytes)
+	sarq	%cl,		%rax	// x >>= n
+\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.10}
+	In the following variant of the function of Figure 3.11(a), the expressions have been replaced
+	by blanks:
+	\begin{lstlisting}
+long arith2(long x, long y, long z)
+{
+	long t1 = ________;
+	long t2 = ________;
+	long t3 = ________;
+	long t4 = ________;
+	return t4;
+}
+	\end{lstlisting}
+	The portion of the generated assembly code implementing these expressions is as follows:
+\begin{lstlisting}[language={}]
+	long arith2(long x, long y, long z)
+	x in %rdi, y in %rsi, z in %rdx
+arith2:
+	orq		%rsi,	%rdi
+	sarq	$3,		%rdi
+	notq	%rdi
+	movq	%rdx,	%rax
+	subq	%rdi,	%rax
+	ret
+\end{lstlisting}
+	Based on this assembly code, fill in the missing portions of
+	the C code.
+\end{ex}
+
+\begin{sol}
+	\
+	The instruction \texttt{orq \%rsi, \%rdi} calculates \texttt{t1 = x | y}.
+	The instruction \texttt{sarq \$3, \%rdi} calculates \texttt{t2 = t1 >> 3},
+	or equivalently \texttt{t2 = 8 * t1}. The instruction \texttt{notq \%rdi}
+	calculates \texttt{t3 = \~{}t2}. The instructions \texttt{movq \%rdx, \%rax}
+	and \texttt{subq \%rdi, \%rax} together transform to
+	\texttt{t4 = z - t3}. The resulting C program is below:
+	\begin{lstlisting}
+		long arith2(long x, long y, long z)
+		{
+			long t1 = x | y;
+			long t2 = 8 * t1;
+			long t3 = ~t2;
+			long t4 = z - t3;
+			return t4;
+		}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.11}
+	It is common to find assembly-code lines of the form
+	\begin{lstlisting}[language={}]
+xorq \%rdx \%rdx
+	\end{lstlisting}
+	in the code that was generated from C where no \emph{exclusive OR} operations
+	were present.
+	\begin{enumerate}[label=(\alph*)]
+		\item Explain the effect of this particular \emph{exclusive-OR} instruction
+		and what useful operation it implements.
+		\item What would be the more straightforward way to express this operation
+		in assembly code?
+		\item Compare the number of bytes to encode these two different implementations
+		of the same operation.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Noting that \texttt{0\^{}0} and \text{1\^{}1} are both 0, the resulting operation is to yield a value 0 and place it in \texttt{\%rdx}.
+		This is essentially zeroing the register.
+		\item The straightforward way to write this would be
+		\texttt{imul \$0, \texttt{\%rdx}}, or \texttt{movq \$0 \%rdx}.
+		\item 
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.12}
+	Consider the following function for computing the quotient and remainder of two unsigned
+	64-bit numbers:
+	\begin{lstlisting}
+void uremdiv(unsigned long x, unsigned long y,
+			 unsigned long *qp, unsigned long *rp) {
+	unsigned long q = x/y;
+	unsigned long r = x%y;
+	*qp = q;
+	*rp = r;
+}
+	\end{lstlisting}
+	Modify the assembly code shown for signed division to implement this function.
+\end{ex}
+
+\begin{sol}
+	\
+	The text presented an function \texttt{remdiv} that was mostly equivalent to \texttt{uremdiv}, but with
+	arguments of type \texttt{long} instead. In other words, it operated with signed numbers.
+	To achieve it, the following assembly instructions were carried out:
+	\begin{lstlisting}[language={}]
+	void remdiv(long x, long y, long *qp, long *rp)
+	x in %rdi, y in %rsi, qp in %rdx, rp in %rcx
+remdiv:
+	movq	%rdx,	%r8		// Copy qp
+	movq	%rdi,	%rax	// Move x to lower 8 bytes of dividend
+	cqto					// Sign-extend to upper 8 bytes of dividend
+	idivq	%rsi			// Divide by y
+	movq	%rax,	(%r8)	// Store quotient at qp
+	movq	%rdx,	(%rcx)	// Store remainder at rp
+	ret
+	\end{lstlisting}
+	The key instruction is \texttt{cqto}, which reads the sign bit from \texttt{\%rax}
+	and copies it across all of \texttt{\%rdx}. For unsigned division, we instead want
+	all zeros in register \texttt{\%rdx}, so we replace \texttt{\%cqto} with
+	\texttt{movq \$0, \%rdx}:
+		\begin{lstlisting}[language={}]
+	void remdiv(unsigned long x, unsigned long y, unsigned long *qp, unsigned long *rp)
+	x in %rdi, y in %rsi, qp in %rdx, rp in %rcx
+uremdiv:
+	movq	%rdx,	%r8		// Copy qp
+	movq	%rdi,	%rax	// Move x to lower 8 bytes of dividend
+	moveq	$0,		%rdx	// Zero the register to signify unsigned arithmetic
+	idivq	%rsi			// Divide by y
+	movq	%rax,	(%r8)	// Store quotient at qp
+	movq	%rdx,	(%rcx)	// Store remainder at rp
+	ret
+	\end{lstlisting}
+\end{sol}
+
 \end{document}
