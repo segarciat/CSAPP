@@ -754,4 +754,562 @@ uremdiv:
 	\end{lstlisting}
 \end{sol}
 
+\begin{ex}{3.13}
+	The C code
+	\begin{lstlisting}
+int comp(data_t a, data_t b) {
+	return a COMP b;
+}
+	\end{lstlisting}
+	shows a general comparison between arguments \texttt{a} and \texttt{b}, where \texttt{data\_t},
+	the data type of the arguments, is defined (via \texttt{typedef}) to be one of the integer types
+	listed in Figure 3.1 (\texttt{char}, \texttt{short}, \texttt{int}, \texttt{long}, or \texttt{char *})
+	and either signed or unsigned. The comparison \texttt{COMP} is defined via \texttt{\#define}.
+	
+	\
+	Suppose \texttt{a} is in some portion of \texttt{\%rdi} while \texttt{b} is in some portion of
+	\texttt{\%rsi}. For each of the following instruction sequences, determine which data types
+	\texttt{data\_t} and which comparisons \texttt{COMP} could cause the compiler to generate this code.
+	(There can be multiple correct answers; you should list them all.)
+	\begin{enumerate}[label=(\alph*)]
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{cmpl} & \texttt{\%esi,} & \texttt{\%edi}\\
+				\texttt{setl} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{cmpw} & \texttt{\%si,} & \texttt{\%di}\\
+				\texttt{setge} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{cmpb} & \texttt{\%sil,} & \texttt{\%dil}\\
+				\texttt{selbe} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{cmpq} & \texttt{\%rsi,} & \texttt{\%rdi}\\
+				\texttt{selne} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The registers \texttt{\%esi} and \texttt{\%edi} are the lower 32-bit portions of
+		\texttt{\%rsi} and \texttt{\%rdi}, respectively. Therefore, \texttt{data\_t} is a 32-bit
+		integer. Moreover, the \texttt{setl} suggests a signed \texttt{<} comparison. Therefore,
+		\texttt{COMP} is \texttt{<} and \texttt{data\_t} is \texttt{int}.
+		\item Here, \texttt{cmpw} deals with 16-bit values, which is consistent with the
+		fact that \texttt{\%si} and \texttt{\%di} are the lower 16-bit portions of \texttt{\%rsi}
+		and \texttt{\%rdi}, respectively. Therefore, \texttt{data\_t} is \texttt{short}. Also,
+		\texttt{setge} is the signed \texttt{>=} instruction.
+		\item Here, \texttt{cmpb} deals with 8-bit values, and \texttt{\%sil} and \texttt{\%dil} are
+		the lower 8-bit portions of the \texttt{\%rsi} and \texttt{\%rdi} registers, respectively.
+		Since \texttt{setbe} is the unsigned \texttt{<=} instruction, it follows that \texttt{data\_t}
+		is \texttt{unsigned char}.
+		\item Here \texttt{selne} is the \texttt{!=} comparison operator, which applies to both signed
+		and unsigned. Since \texttt{\%rsi} and \texttt{\%rdi} are 64-bit registers, it follows that
+		\texttt{data\_t} can be, signed or unsigned \texttt{long}, or any pointer type.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.14}
+	The C code
+	\begin{lstlisting}
+int test(data_t a) {
+	return a TEST 0;
+}
+	\end{lstlisting}
+	shows a general comparison between \texttt{a} and 0, where we can set the data type of the argument by
+	declaring \texttt{data\_t} with a \texttt{typedef}, and the nature of the comparison by declaring
+	\texttt{TEST} with a \texttt{\#define} declaration. The following instruction sequences implement the
+	comparison, where \texttt{a} is held in some portion of registers \texttt{\%rdi}. For each sequence,
+	determine which data types \texttt{data\_t} and which comparisons \texttt{TEST} could cause the compiler
+	to generate this code. (There can be multiple correct answers; list all correct ones.)
+	\begin{enumerate}[label=(\alph*)]
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{testq} & \texttt{\%rdi,} &\texttt{\%rdi}\\
+				\texttt{setge} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{testw} & \texttt{\%di,} &\texttt{\%di}\\
+				\texttt{sete} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{testb} & \texttt{\%dil,} &\texttt{\%dil}\\
+				\texttt{seta} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+		\item \begin{center}
+			\begin{tabular}{ccc}
+				\texttt{testl} & \texttt{\%edi,} &\texttt{\%edi}\\
+				\texttt{setle} & \texttt{\%al}
+			\end{tabular}
+		\end{center}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The \texttt{setge} indicates signed comparison, so \texttt{TEST} is \texttt{>=}.
+		The \texttt{testq} suggests we are using a quad (64-bit), so \texttt{data\_t} is
+		a \texttt{long}.
+		\item The \texttt{sete} is used for signed or unsigned equality checks, so \texttt{TEST} is
+		\texttt{=}. The \texttt{testw} suggests we are operating on a word (16-bit), so
+		\texttt{data\_t} is either \texttt{short} or \texttt{unsigned short}.
+		\item The \texttt{seta} is used for unsigned above comparison, so \texttt{TEST} is \texttt{>}.
+		The \texttt{testb} is used for 8-bit comparison, and \texttt{\%dil} is an 8-bit portion of
+		\texttt{\%rdi} register, so \texttt{data\_t} is an \texttt{unsigned char}.
+		\item The \texttt{setle} is used for signed less than or equal comparison, so \texttt{TEST}
+		is \texttt{<=}. The \texttt{\%edi} is the lower 32-bit portion of the \texttt{\%rdi} register,
+		so \texttt{data\_t} is \texttt{int}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.15}
+	In the following excerpts from a disassembled binary, some of the information has been replaced
+	by \texttt{X}'s. Answer the following questions about the instructions:
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the target of the \texttt{je} instruction below? (You do not need to know
+		anything about the \texttt{callq} instruction here.)
+		\begin{lstlisting}[language={}]
+4003fa: 74 02				je		XXXXXX
+4003fc: ff d0				callq	*%rax
+		\end{lstlisting}
+		\item What is the target of the \texttt{je} instruction below?
+		\begin{lstlisting}[language={}]
+40042f: 74 f4				je		XXXXXX
+400431: 5d					pop 	%rbp
+		\end{lstlisting}
+		\item What is the address of the \texttt{ja} and \texttt{pop} instructions?
+		\begin{lstlisting}[language={}]
+XXXXXX: 77 02				ja		400547
+XXXXXX: 5d					pop		%rbp
+		\end{lstlisting}
+		\item In the code that follows, the jump target is encoded in PC-relative form
+		as a $4$-byte two's complement number. The bytes are listed from least to most,
+		reflecting the little-endian byte ordering of x86-64. What is the address of
+		the jump target?
+		\begin{lstlisting}[language={}]
+4005e8:	e9 73 ff ff ff		jmp		XXXXXX
+4005ed: 90					nop		XXXXXX
+		\end{lstlisting}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The \texttt{0x02} in \texttt{74 02} must be added to \texttt{4003fc}, the
+		address of the following instruction, to yield \texttt{4003fe} as the jump target
+		of \texttt{je}.
+		\item The \texttt{f4} in \texttt{74 f4} must be added to \texttt{400431}, the
+		address of the next instruction. Since \texttt{f4} is a single byte has decimal
+		value $-12$ (in two's complement), we subtract 12 from the hex address \texttt{400431}
+		and obtain \texttt{400425}.
+		\item Adding \texttt{0x02} from \texttt{77 02} to \texttt{XXXXXX} should give
+		\texttt{400547}, and since \texttt{0x02} is decimal 2, we get that the \texttt{XXXXXX}
+		that follows the jump instruction must be \texttt{400545}. Since the instruction
+		\texttt{5d} at that location is 2 bytes after the first instruction in the
+		\texttt{ja} line, we subtract 2 bytes to get \texttt{400543} for the byte address
+		instruction of the \texttt{ja} line.
+		\item The \texttt{73 ff ff ff} is written in little-endian (least to most significant)
+		bit, so we can re-write it as \texttt{ff ff ff 73} (from most to least significant).
+		This is a negative number since the most significant bit is 1, and it is a sign
+		extension of \texttt{01 73}. Since \texttt{01 00} is 256 and \texttt{00 73} is 115,
+		this means we have $-256+115=-141$. Therefore we add $-141$ to the following address,
+		\texttt{4005ed}, to get the jump target address which. The \texttt{ed} portion 237,
+		and $237-141=96$, or \texttt{0x60}. Therefore the jump target address is \texttt{400560}.
+		has value 
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.16}
+	When given the C code
+	\begin{lstlisting}
+void cond(long a, long *p)
+{
+	if (p && a > &p)
+		*p = a;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following code:
+	\begin{lstlisting}[language={}]
+	void cond(long a, long *p)
+	a in %rdi, p in %rsi
+cond:
+	testq	%rsi,	%rsi
+	je		.L1
+	cmpq	%rdi,	(%rsi)
+	jge		.L1
+	movq	%rdi,	(%rsi)
+.L1:
+	rep; ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Write a goto version in C that performs the same computation and mimics the control flow
+		of the assembly code, in the style shown in Figure 3.16(b). You might find it helpful to first
+		annotate the assembly code as we have done in our examples.
+		\item Explain why the assembly code contains two conditional branches even though the C code
+		has only one \texttt{if} statement.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item
+		The annotated assembly is below:
+	\begin{lstlisting}[language={}]
+	void cond(long a, long *p)
+	a in %rdi, p in %rsi
+cond:
+	testq	%rsi,	%rsi	// Test p
+	je		.L1				// If p != NULL (meaning 0) go to done
+	cmpq	%rdi,	(%rsi)	// comp (*p):a
+	jge		.L1				// if >= goto done
+	movq	%rdi,	(%rsi)	// *p = a;
+.L1:
+	rep; ret				// return
+	\end{lstlisting}
+	The goto version is below:
+	\begin{lstlisting}
+void goto_cond(long a, long *p)
+{
+	if (p == 0)
+		goto done;
+	if (*p >= a)
+		goto done;
+	*p=a;
+	done:
+		return;
+	
+}
+	\end{lstlisting}
+	\item There are two conditional branches because the condition
+	expression in the \texttt{if} statement is the \texttt{AND} of
+	two condition expressions.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.17}
+	An alternate rule for translating \texttt{if} statements into goto
+	code is as follows:
+	\begin{lstlisting}[language={}]
+	t = test-expr;
+	if (t)
+		goto true;
+	else-statement
+	goto done;
+true:
+	then-statement
+done:
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Rewrite the goto version of \texttt{absdiff\_se} based
+		on this alternate rule.
+		\item Can you think of any reasons for choosing one rule over
+		the other?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item 
+		\begin{lstlisting}
+void gotov2_absdiff_se(long x, long y)
+{
+	long result;
+	if (x < y)
+		goto x_le_y;
+	ge_cnt++;
+	result = x - y;
+	goto done;
+x_le_y:
+	le_cnt++;
+	result = y - x;
+done:
+	return result;
+}
+		\end{lstlisting}
+		\item I don't know! However the book mention that the first one is
+		preferable when there is no else branch, since it's easier
+		to translate.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.18}
+	Starting with C code of the form
+	\begin{lstlisting}
+long test(long x, long y, long z) {
+	long val = _______;
+	if (________) {
+		if (______)
+			val = ______;
+		else
+			val = ______;
+	} else if (______)
+		val = _________;
+	return val;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long test(long x, long y, long z)
+	x in %rdi, y in %rsi, z in %rdx
+test:
+	leaq	(%rdi, %rsi),	%rax
+	addq	%rdx,	%rax
+	cmpq	$-3,	%rdi
+	jge		.L2
+	cmpq	%rdx,	%rsi
+	jge		.L3
+	movq	%rdi,	%rax
+	imulq	%rsi,	%rax
+	ret
+.L3:
+	movq	%rsi,	%rax
+	imulq	%rdx,	%rax
+	ret
+.L2:
+	cmpq	$2,		%rdi
+	jle		.L4
+	movq	%rdi,	%rax
+	imulq	%rdx,	%rax
+.L4:
+	rep; ret
+	\end{lstlisting}
+	Fill in the missing expressions in the C code.
+\end{ex}
+
+\begin{sol}
+	\
+	First we can annotate the assembly:
+	\begin{lstlisting}[language={}]
+	long test(long x, long y, long z)
+	x in %rdi, y in %rsi, z in %rdx
+test:
+	leaq	(%rdi, %rsi),	%rax	// long t = x + y;
+	addq	%rdx,	%rax			// long val = t + z;
+	cmpq	$-3,	%rdi			// Compare x:-3
+	jge		.L2						// if >= go to .L2
+	cmpq	%rdx,	%rsi			// Compare y:z
+	jge		.L3						// if >= goto .L3
+	movq	%rdi,	%rax			// val = x;
+	imulq	%rsi,	%rax			// val *= y;
+	ret								// return val;
+.L3:
+	movq	%rsi,	%rax			// val = y;
+	imulq	%rdx,	%rax			// val *= z;
+	ret								// return val;
+.L2:
+	cmpq	$2,		%rdi			// Compare x:2
+	jle		.L4						// if <= goto .L4
+	movq	%rdi,	%rax			// val = x;
+	imulq	%rdx,	%rax			// val *= z;
+.L4:
+	rep; ret						// return val;
+\end{lstlisting}
+	From this, the C code is
+	\begin{lstlisting}
+long test(long x, long y, long z) {
+	long val = x + y + z;
+	if (x < -3) {
+		if (y < z)
+			val = x * y;
+		else
+			val = y * z;
+	} else if (x > 2)
+		val = x * z;
+	return val;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.19}
+	Running on an older processor model, our code required around 16
+	cycles when the branching pattern was highly predictable, and around
+	31 cycles when the pattern was random.
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the appropriate miss penalty?
+		\item How many cycles would the function require when the branch
+		was mispredicted?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item As discussed in the text, if $p$ is the probability
+		of misprediction, $T_{OK}$ is the time to execute the code
+		without misprediction, and $T_{MP}$ is the misprediction penalty,
+		then the average time to execute the code is given by
+		\begin{align*}
+		T_{avg}(p)&=(1-p)T_{OK}+p(T_{OK}+T_{MP})=T_{OK}+pT_{MP}\\
+		T_{MP}&=\frac{1}{p}\left(T_{avg}(p)-T_{OK}\right)
+		\end{align*}
+		We are given $T_{OK}=16$, and $T_{ran}=T_{avg}(p)=31$, so
+		\begin{align*}
+			T_{MP}&=2(31-16)=30
+		\end{align*}
+		\item If mispredicted, the function would require $T_{OK}+T{MP}=46$
+		cycles.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.20}
+	In the following C function, we have left the definition of \texttt{OP} incomplete:
+	\begin{lstlisting}
+#define OP	_______	/* Unknown operator */
+
+long arith(long x) {
+	return x OP 8;
+}
+	\end{lstlisting}
+	When compiled, \texttt{gcc} generated the following assembly code:
+	\begin{lstlisting}[language={}]
+	long arith(long x)
+	x in %rdi
+arith:
+	leaq	7(%rdi),	%rax
+	testq	%rdi,		%rdi
+	cmovns	%rdi,		%rax
+	sarq	$3,			%rax
+	ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What operation is \texttt{OP}?
+		\item Annotate the code to explain how it works.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The book explains that \texttt{OP} is \texttt{/} because dividing
+		by a power of $2$ involves first biasing the number so that it rounds towards 0.
+		\item 
+	\begin{lstlisting}[language={}]
+	long arith(long x)
+	x in %rdi
+arith:
+	leaq	7(%rdi),	%rax	// int t = x + 7
+	testq	%rdi,		%rdi	// test x
+	cmovns	%rdi,		%rax	// if >=0 then t = x
+	sarq	$3,			%rax	// t >>= 3; or equivalently t /= 8;
+	ret							// return t;
+\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.21}
+	Starting with C code of the form
+	\begin{lstlisting}
+long test(long x, long y) {
+	long val = ___________;
+	if (___________) {
+		if (_________)
+			val = ____________;
+		else
+			val = ____________;
+	} else if (__________)
+		val = ________;
+	return val;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long test(long x, long y)
+	x in %rdi, y in %rsi
+test:
+	leaq	0(,%rdi,8),	%rax
+	testq	%rsi,		%rsi
+	jle		.L2
+	movq	%rsi,		%rax
+	subq	%rdi,		%rax
+	movq	%rdi,		%rdx
+	andq	%rsi,		%rdx
+	cmpq	%rsi,		%rdi
+	cmovge	%rdx,		%rax
+	ret
+.L2:
+	addq	%rsi,		%rdi
+	cmpq	$-2,		%rsi
+	cmovle	%rdi,		%rax
+	ret
+	\end{lstlisting}
+	Fill in the missing expressions in the C code.
+\end{ex}
+
+\begin{sol}
+	\
+	We can first annotate the assembly:
+	\begin{lstlisting}[language={}]
+	long test(long x, long y)
+	x in %rdi, y in %rsi
+test:
+	leaq	0(,%rdi,8),	%rax	// long r = x * 8;
+	testq	%rsi,		%rsi	// test y
+	jle		.L2					// if <= 0 goto .L2
+	movq	%rsi,		%rax	// r = y;
+	subq	%rdi,		%rax	// r -= x;
+	movq	%rdi,		%rdx	// long s = x;
+	andq	%rsi,		%rdx	// s &= y;
+	cmpq	%rsi,		%rdi	// compare x:y
+	cmovge	%rdx,		%rax	// if >= then r = s;
+	ret							// return r;
+.L2:
+	addq	%rsi,		%rdi	// x += y;
+	cmpq	$-2,		%rsi	// compare y:-2
+	cmovle	%rdi,		%rax	// if y <= -2 then r = x;
+	ret							// return r;
+	\end{lstlisting}
+	This reveals that the C code is as follows:
+	\begin{lstlisting}
+long test(long x, long y) {
+	long val = x * 8;
+	if (y > 0) {
+		if (x >= y)
+			val = x & y;
+		else
+			val = y - x;
+	} else if (y <= -2)
+		val = x + y;
+	return val;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.22}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the maximum value of $n$ for which we can represent $n!$ with
+		a 32-bit \texttt{int}?
+		\item What about a 64-bit \texttt{long}?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	I thought to print a table of values, but not how to determine overflow. The solution
+	provided in the book was to use \texttt{tmult\_ok} from practice problem 2.35 to check
+	for overflow. I have provided this in \texttt{./22-factorial} for the case of \texttt{int},
+	which shows that $n=12$ is the maximum before overflow, meaning $12!$ is ok, but $13!$
+	overflows.
+\end{sol}
+
 \end{document}
