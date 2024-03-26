@@ -1312,4 +1312,730 @@ long test(long x, long y) {
 	overflows.
 \end{sol}
 
+\begin{ex}{3.23}
+	For the C code
+	\begin{lstlisting}
+long dw_loop(long x) {
+	long y = x*x;
+	long *p = &x;
+	long n = 2*x;
+	do {
+		x += y;
+		(*p)++;
+		n--;
+	} while (n > 0);
+	return x;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long dw_loop(long x)
+	x initially in %rdi
+dw_loop:
+	movq	%rdi,			%rax
+	movq	%rdi,			%rcx
+	imulq	%rdi,			%rcx
+	leaq	(%rdi,%rdi),	%rdx
+.L2:
+	leaq	1(%rcx,%rax),	%rax
+	subq	$1,				%rdx
+	testq	%rdx,			%rdx
+	jg		.L2
+	rep; ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Which registers are used to hold program values \texttt{x}, \texttt{y},
+		and \texttt{n}?
+		\item How has the compiler eliminated the need for pointer variable \texttt{p}
+		and the pointer dereferencing implied by the expression \texttt{(*p)++}?
+		\item Add annotations to the assembly code describing the operation of the program,
+		similar to those shown in Figure 3.19(c).
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Initially, \texttt{x} is in \texttt{\%rdi}, but then it is placed
+		in \texttt{\%rax} since it is to be returned after modification.
+		The variable \texttt{y} is placed in the \texttt{\%rcx} register,
+		and \texttt{n} is placed in the \texttt{\%rdx} register.
+		\item It has done so through the use of the \texttt{leaq} instruction
+		to both increment \texttt{x} by 1 (the effect of \texttt{(*p)++}) in
+		addition to increment \texttt{x} by \texttt{y}.
+		\item The annotations are below:
+\begin{lstlisting}[language={}]
+	long dw_loop(long x)
+	x initially in %rdi
+dw_loop:
+	movq	%rdi,			%rax	// long result = x;
+	movq	%rdi,			%rcx	// y = x;
+	imulq	%rdi,			%rcx	// y *= x;
+	leaq	(%rdi,%rdi),	%rdx	// long n = 2 * x;
+.L2:
+	leaq	1(%rcx,%rax),	%rax	// result += y + 1;
+	subq	$1,				%rdx	// n -= 1
+	testq	%rdx,			%rdx	// test n
+	jg		.L2						// if > 0 goto .L2
+	rep; ret						// return result
+\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.24}
+	For C code having the general form
+	\begin{lstlisting}
+long loop_while(long a, long b)
+{
+	long result = _________;
+	while (________) {
+		result = ________;
+		a = ________;
+	}
+	return result;
+}
+	\end{lstlisting}
+	\texttt{gcc}, run with command-line option \texttt{-Og}, produces the
+	following code:
+	\begin{lstlisting}[language={}]
+	long loop_while(long a, long b)
+	a in %rdi, b in %rsi
+loop_while:
+	movl	$1,				%eax
+	jmp		.L2
+.L3:
+	leaq	(%rdi,%rsi),	%rdx
+	imulq	%rdx,			%rax
+	addq	$1,				%rdi
+.L2:
+	cmpq	%rsi,			%rdi
+	jl		.L3
+	rep; ret
+	\end{lstlisting}
+	We can see that the compiler used a jump-to-middle translation using
+	the \texttt{jmp} instruction on line 3 to jump to the test starting
+	with label \texttt{.L2}. Fill int he missing parts of the C code.
+\end{ex}
+
+\begin{sol}
+	\
+	Below is my annotation of the assembly produced by \texttt{gcc}:
+	\begin{lstlisting}[language={}]
+	long loop_while(long a, long b)
+	a in %rdi, b in %rsi
+loop_while:
+	movl	$1,				%eax	// long result = 1;
+	jmp		.L2						// goto .L2
+.L3:
+	leaq	(%rdi,%rsi),	%rdx	// long t = a + b;
+	imulq	%rdx,			%rax	// result *= t;
+	addq	$1,				%rdi	// a += 1;
+.L2:
+	cmpq	%rsi,			%rdi	// compare a:b
+	jl		.L3						// if < goto .L3
+	rep; ret
+	\end{lstlisting}
+	Based on this, I filled in the C code as shown below:
+	\begin{lstlisting}
+long loop_while(long a, long b)
+{
+	long result = 1;
+	while (a < b) {
+		result = result * (a + b);
+		a = a + 1;
+	}
+	return result;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.25}
+	For C code having the general form
+	\begin{lstlisting}
+long loop_while2(long a, long b)
+{
+	long result = ___________;
+	while (___________) {
+		result = __________;
+		b = ___________;
+	}
+	return result;
+}
+	\end{lstlisting}
+	\texttt{gcc}, when run with command-line option \texttt{-O1}, produces
+	the following code:
+	\begin{lstlisting}[language={}]
+	a in %rdi, b in %rsi
+loop_while2:
+	testq	%rsi,	%rsi
+	jle		.L8
+	movq	%rsi,	%rax
+.L7:
+	imulq	%rdi,	%rax
+	subq	%rdi,	%rsi
+	testq	%rsi,	%rsi
+	jg		.L7
+	rep; ret
+.L8:
+	movq	%rsi,	%rax
+	ret
+	\end{lstlisting}
+	We can see that the compiler used a guarded-do translation, using the \texttt{jle}
+	instruction on line 3 to skip over the loop code when the initial test fails.
+	Fill in the missing parts of the C code. Note that the control structure in the
+	assembly code does not exactly match what would be obtained by a direct translation
+	of the C code according to our translation rules. In particular, it has two different
+	\texttt{ret} instructions (lines 10 and 13). However, you can fill out the missing
+	portions of the C code in a way that it will have equivalent behavior to the
+	assembly code.
+\end{ex}
+
+\begin{sol}
+	\
+	First I annotated the assembly like so:
+\begin{lstlisting}[language={}]
+	a in %rdi, b in %rsi
+loop_while2:
+	testq	%rsi,	%rsi	// test b
+	jle		.L8				// if <= 0 goto .L8
+	movq	%rsi,	%rax	// long result = b;
+.L7:
+	imulq	%rdi,	%rax	// result *= a;
+	subq	%rdi,	%rsi	// b -= a;
+	testq	%rsi,	%rsi	// test b
+	jg		.L7				// if > 0 goto .L7
+	rep; ret				// return result;
+.L8:
+	movq	%rsi,	%rax	// result = b;
+	ret						// return result;
+\end{lstlisting}
+	The corresponding C then becomes:
+		\begin{lstlisting}
+long loop_while2(long a, long b)
+{
+	long result = result = b;
+	while (b > 0) {
+		result = result * a;
+		b = b - a;
+	}
+	return result;
+}
+		\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.26}
+	A function \texttt{fun\_a} has the following overall structure:
+	\begin{lstlisting}
+long fun_a(unsigned long x) {
+	long val = 0;
+	while ( ... ) {
+		.
+		.
+		.
+	}
+	return ...;
+}
+	\end{lstlisting}
+	The \texttt{gcc} C compiler generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long fun_a(unsigned long x)
+	x in %rdi
+fun_a:
+	movl	$0,		%eax
+	jmp		.L5
+.L6:
+	xorq	%rdi,	%rax
+	shrq	%rdi			// Shift right by 1
+.L5:
+	testq	%rdi,	%rdi
+	jne		.L6
+	andl	$1,		%eax
+	ret
+	\end{lstlisting}
+	Reverse engineer the  operation of this code and then do the following:
+	\begin{enumerate}[label=(\alph*)]
+		\item Determine what loop translation method was used.
+		\item Use the assembly-code version to fill in the missing parts of
+		the C code.
+		\item Describe in English what this function computes.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	I first annotated the assembly as follows:
+\begin{lstlisting}[language={}]
+	long fun_a(unsigned long x)
+	x in %rdi
+fun_a:
+	movl	$0,		%eax	// long result = 0;
+	jmp		.L5				// goto .L5
+.L6:
+	xorq	%rdi,	%rax	// result = result ^ x;
+	shrq	%rdi			// x >>= 1;
+.L5:
+	testq	%rdi,	%rdi	// test x
+	jne		.L6				// if != 0 goto .L6
+	andl	$1,		%eax	// result = result & 1;
+	ret						// return result;
+\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item The \texttt{jmp .L5} instruction and the tests and jump
+		in the lines that proceed label \texttt{.L5} suggests a
+		jump-to-middle strategy.
+		\item The C code can be filled in as follows:
+		\begin{lstlisting}
+long fun_a(unsigned long x) {
+	long val = 0;
+	while ( x != 0 ) {
+		val = val ^ x;
+		x = x >> 1;
+	}
+	return val & 1;
+}
+		\end{lstlisting}
+		\item Since \texttt{val} is 0, \texttt{0 \^{} 0} is \texttt{0}, and
+		\texttt{0 \^{} 1} is \texttt{1}, it follows that the initial \texttt{val \^{} x}
+		sets \texttt{val} equal to \texttt{x}. Then, shifting \texttt{x} results in
+		the least significant bit of \texttt{val} being XORed with the least significant
+		bit of \texttt{x} after the shift. When the loop ends, the least significant
+		bit of \texttt{val} will have the result of XORing all of the bits in \texttt{x},
+		and the \texttt{val \& 1} yields that value. Since the \texttt{x} is an
+		\texttt{unsigned long}, which has an even number of bits, and since the
+		\texttt{XOR} of an even number of bits yields 0 if a number has an even number
+		of 1 bits (or no 1 bits at all) and 1 otherwise, it follows that this function
+		returns 1 if \texttt{x} has an odd number of 1 bits, and 0 otherwise.
+		
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.27}
+	Write goto code for \texttt{fact\_for} based on first transforming it to
+	a \texttt{while} loop and then applying the guarded-do transformation.
+\end{ex}
+
+\begin{sol}
+	\
+	The \texttt{fact\_for} function is given below:
+	\begin{lstlisting}
+long fact_for(long n)
+{
+	long i;
+	long result = 1;
+	for (i = 2; i <= n; i++)
+		result += i;
+	return result;
+}
+	\end{lstlisting}
+	The \texttt{while} loop version is below:
+	\begin{lstlisting}
+long fact_while(long n)
+{
+	long result = 1;
+	long i = 2;
+	while (i <= n) {
+		result *= i;
+		i++;
+	}
+	return result;
+}
+	\end{lstlisting}
+	The guarded-do translation follows:
+	\begin{lstlisting}
+long fact_while_guarded_do(long n)
+{
+	long result = 1;
+	long i = 2;
+	if (i > n)
+		goto done;
+loop:
+	result *=  i;
+	i++;
+	if (i <= n)
+		goto loop;
+done:
+	return result;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.28}
+	A function \texttt{fun\_b} has the following overall structure:
+	\begin{lstlisting}
+long fun_b(unsigned long x) {
+	long val = 0;
+	long i;
+	for ( ... ; ... ; ... ) {
+		.
+		.
+		.
+	}
+	return val;
+}
+	\end{lstlisting}
+	The \texttt{gcc} C compiler generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long fun_b(unsigned long  x)
+	x in %rdi
+fun_b:
+	movl	$64,	%edx
+	movl	$0,		%eax
+.L10:
+	movq	%rdi,	%rcx
+	andl	$1,		%ecx
+	addq	%rax,	%rax
+	orq		%rcx,	%rax
+	shrq	%rdi			// Shift right by 1
+	subq	$1,		%rdx
+	jne		.L10
+	rep; ret
+	\end{lstlisting}
+	Reverse engineer the operation of this code and then do the following:
+	\begin{enumerate}[label=(\alph*)]
+		\item Use the assembly-code version to fill in the missing parts of
+		the C code.
+		\item Explain why there is neither an initial test before the loop
+		nor an initial jump to the test portion of the loop.
+		\item Describe in English what this function computes.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	I began by annotating the assembly code as follows:
+	\begin{lstlisting}[language={}]
+long fun_b(unsigned long  x)
+x in %rdi
+fun_b:
+	movl	$64,	%edx	// unsigned long t = 64;
+	movl	$0,		%eax	// long result = 0;
+.L10:
+	movq	%rdi,	%rcx	// long v = x;
+	andl	$1,		%ecx	// v = v & 1;
+	addq	%rax,	%rax	// result = result + result;
+	orq		%rcx,	%rax	// result = result | v;
+	shrq	%rdi			// x = x >> 1;
+	subq	$1,		%rdx	// t = t - 1;
+	jne		.L10			// if t != 0 goto .L10
+	rep; ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Based on my annotations of the assembly, I deduced the C code to be:
+			\begin{lstlisting}
+long fun_b(unsigned long x) {
+	long val = 0;
+	long i;
+	for ( i = 64 ; i != 0 ; i-- ) {
+		long xlsb = x & 1;	// Get least significant bit of x
+		val = (2 * val) | xlsb;
+		x = x >> 1;
+	}
+	return val;
+}
+			\end{lstlisting}
+		\item Neither test is present because the loop always iterates 64 times.
+		\item In the first iteration, the least significant bit of \texttt{val}
+		has the least significant bit of \texttt{x}, and all of its other bits
+		are 0. In the next iteration, multiplying \texttt{val} by 2 shifts all
+		of the bits of \texttt{val} left by 2 while copying in the next-least
+		significant bit of \texttt{x} into the least significant position of
+		\texttt{val}. The apparent effect is that it reverses the bits
+		of \texttt{x}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.29}
+	Executing a \texttt{continue} statement in C causes the program to jump to the
+	end of the current loop iteration. The stated rule for translating a \texttt{for}
+	loop into a \texttt{while} loop needs some refinement when dealing with \texttt{continue}
+	statements. For example, consider the following code:
+	\begin{lstlisting}
+/* Example of for loop containing a continue statement */
+/* Sum even numbers between 0 and 9 */
+long sum = 0;
+long i;
+for (i = 0; i < 10; i++) {
+	if (i & 1)
+		continue;
+	sum += i;
+}
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What would we get if we naively applied our rule for translating
+		the \texttt{for} loop into a \texttt{while} loop? What would be wrong with
+		this code?
+		\item How could you replace the \texttt{continue} statement with a \texttt{goto}
+		statement to ensure that the \texttt{while} loop correctly duplicates the
+		behavior of the \texttt{for} loop?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}
+		\item We would get the following if we ``naively" translated the for loop:
+			\begin{lstlisting}
+/* Naive translation of for loop with continue statement into while loop */
+/* Sum even numbers between 0 and 9 */
+long sum = 0;
+long i = 0;
+while (i < 10) {
+	if (i & 1)
+		continue;
+	sum += i;
+	i++;
+}
+			\end{lstlisting}
+			The translation creates an infinite loop. In the first iteration, the
+			test expression in the \texttt{if} statement evaluates to false, so
+			\texttt{continue} is not evaluated, causing \texttt{i++} to execute,
+			thus increasing \texttt{i} to 1. With this new value, the condition
+			in the \texttt{if} statement now succeeds, causing \texttt{continue} to
+			be executed. As a result, we go back to the top of the while loop, but we
+			never reach the \texttt{i++} statement thereafter. Thus, the value of
+			\texttt{i} remains at 1 indefinitely.
+			\item We could replace the \texttt{continue} with a \texttt{goto next\_iter},
+			where \texttt{next\_iter} is a label under which the \texttt{i++;} statement
+			is present.
+				\begin{lstlisting}
+/* Translation of for loop with continue statement into while loop */
+/* Sum even numbers between 0 and 9 */
+long sum = 0;
+long i = 0;
+while (i < 10) {
+	if (i & 1)
+		goto next_iter;
+	sum += i;
+next_iter:
+	i++;
+}
+				\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.30}
+	In the C function that follows, we have omitted the body of the \texttt{switch}
+	statement. In the C code, the case labels did not span a contiguous range, and
+	some cases had multiple labels.
+	\begin{lstlisting}
+void switch2(long x, long *dest) {
+	long val = 0;
+	switch (x) {
+		/* body of switch statement omitted */
+	}
+	*dest = val;
+}
+	\end{lstlisting}
+	In compiling the function \texttt{gcc} generates the assembly code that follows
+	for the initial part of the procedure, with variable \texttt{x} in \texttt{\%rdi}:
+	\begin{lstlisting}[language={}]
+	void switch2(long x, long *dest)
+	x in %rdi
+switch2:
+	addq	$1,		%rdi
+	cmpq	$8,		%rdi
+	ja		.L2
+	jmp		*.L4(,%rdi,8)
+	\end{lstlisting}
+	It generates the following code for the jump table:
+	\begin{lstlisting}[language={}]
+.L4:
+	.quad	.L9
+	.quad	.L5
+	.quad	.L6
+	.quad	.L7
+	.quad	.L2
+	.quad	.L7
+	.quad	.L8
+	.quad	.L2
+	.quad	.L5
+	\end{lstlisting}
+	Based on this information, answer the following questions:
+	\begin{enumerate}[label=(\alph*)]
+		\item What were the values of the case labels in the \texttt{switch}
+		statement?
+		\item What cases had multiple labels in the C code?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Below I have annotated the initial part of the assembly for the
+		procedure provided:
+		\begin{lstlisting}[language={}]
+	void switch2(long x, long *dest)
+	x in %rdi
+switch2:
+	addq	$1,		%rdi	// x += 1
+	cmpq	$8,		%rdi	// cmp x:8
+	ja		.L2				// if > goto .L2 (default case)
+	jmp		*.L4(,%rdi,8)	// Go to *jt[index]
+		\end{lstlisting}
+		Based on the annotation, \texttt{x} was adjusted so that it would be
+		an index between 0 and 8, inclusive by adding 1. Hence, \texttt{x}
+		must have been between -1 and 7.  Based on this, we can annotate the
+		jump table assembly snippet given:
+			\begin{lstlisting}[language={}]
+.L4:
+.quad	.L9	// case -1
+.quad	.L5	// case 0
+.quad	.L6	// case 1
+.quad	.L7	// case 2
+.quad	.L2	// case 3 (default)
+.quad	.L7	// case 4
+.quad	.L8 // case 5
+.quad	.L2	// case 6
+.quad	.L5	// case 7
+			\end{lstlisting}
+		The \texttt{.L2} label is reserved for the \texttt{default} case. The
+		\texttt{.L4} for the jump table addresses. The only \texttt{x} values
+		with no matching \texttt{case} are when \texttt{x} is 3 or 6, because for
+		those values, \texttt{switch} transfers control to the \texttt{default} branch.
+		\item The labels that repeat constitute the cases with multiple labels
+		(except for \texttt{.L2}, corresponding to the \texttt{default} branch)
+		are the cases with multiple labels. These are \texttt{.L5} with cases
+		\texttt{0} or \texttt{7}, and \texttt{.L7} with cases 2 or 4.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.31}
+	For a C function \texttt{switcher} with the general structure
+	\begin{lstlisting}
+void switcher(long a, long b, long c, long *dest)
+{
+	long val;
+	switch(a) {
+		case ________:		/* Case A */
+			c = _______;
+			/* Fall through */
+		case ________:		/* Case B */
+			val = _________;
+			break;
+		case ________:		/* Case C */
+		case ________:		/* Case D */
+			val = __________;
+			break;
+		case ________:		/* Case E */
+			val = __________;
+			break;
+		default:
+			val = __________;
+	}
+	*dest = val;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the assembly code below:
+	\begin{lstlisting}[language={}]
+	void switcher(long a, long b, long c, long *dest)
+	a in %rdi, b in %rsi, c in %rdx, d in %rcx
+switcher:
+	cmpq	$7,				%rdi
+	ja		.L2
+	jmp		*.L4(,%rdi,8)
+	.section				.rodata
+.L7:
+	xorq	$15,			%rsi
+	movq	%rsi,			%rdx
+.L3:
+	leaq	112(%rdx),		%rdi
+	jmp		.L6
+.L5:
+	leaq	(%rdx,%rsi),	%rdi
+	salq	$2,				%rdi
+	jmp		.L6
+.L2:
+	movq	%rsi,			%rdi
+.L6:
+	movq	%rdi,			(%rcx)
+	ret
+	\end{lstlisting}
+	and it also generates the following jump table:
+	\begin{lstlisting}[language={}]
+.L4:
+	.quad	.L3
+	.quad	.L2
+	.quad	.L5
+	.quad	.L2
+	.quad	.L6
+	.quad	.L7
+	.quad	.L2
+	.quad	.L5
+	\end{lstlisting}
+	Fill in the missing parts of the C code. Except for the ordering
+	of case labels \texttt{C} and \texttt{D}, there is only one way
+	to fit the different cases into the template.
+\end{ex}
+
+\begin{sol}
+	\
+	I began by annotating the assembly:
+		\begin{lstlisting}[language={}]
+void switcher(long a, long b, long c, long *dest)
+a in %rdi, b in %rsi, c in %rdx, d in %rcx
+switcher:
+	cmpq	$7,				%rdi	// compare a:7
+	ja		.L2						// if > 7 goto .L2 (default branch)
+	jmp		*.L4(,%rdi,8)			// Go to *jt[index]
+	.section				.rodata
+.L7:								// Case A
+	xorq	$15,			%rsi	// b = b ^ 15;
+	movq	%rsi,			%rdx	// c = b;
+									// fall through
+.L3:								// Case B
+	leaq	112(%rdx),		%rdi	// a = c + 112;
+	jmp		.L6						// break
+.L5:								// Cases C and D
+	leaq	(%rdx,%rsi),	%rdi	// a = c + b
+	salq	$2,				%rdi	// a <<= 2;
+	jmp		.L6						// break
+.L2:								// default
+	movq	%rsi,			%rdi	// a = b;
+.L6:								// just after switch stament, or case E
+	movq	%rdi,			(%rcx)	// *dest = a;
+	ret
+		\end{lstlisting}
+		It seems there is no case E, from which I deduce that case E actually does
+		the same thing as the last statement pf \texttt{*dest = val}. That is,
+		case E just sets \texttt{val} equal to \texttt{a}. Based on this the
+		case values corresponding to the jump table labels are as follows:
+		\begin{lstlisting}[language={}]
+.L4:
+	.quad	.L3	// case 0 (case B)
+	.quad	.L2	// case 1 (default)
+	.quad	.L5	// case 2 (case C)
+	.quad	.L2 // case 3 (default)
+	.quad	.L6 // case 4 (case E)
+	.quad	.L7 // case 5 (case A)
+	.quad	.L2 // case 6 (default)
+	.quad	.L5 // case 7 (case D)
+		\end{lstlisting}
+		Based on this, the C code is as follows:
+	\begin{lstlisting}
+void switcher(long a, long b, long c, long *dest)
+{
+	long val;
+	switch(a) {
+		case 5:		/* Case A */
+			c = b ^ 15;
+			/* Fall through */
+		case 0:		/* Case B */
+			val = c + 112;
+			break;
+		case 2:		/* Case C */
+		case 7:		/* Case D */
+			val = (c + b) << 2;
+			break;
+		case 4:		/* Case E */
+			val = a;
+			break;
+		default:
+			val = b;
+	}
+	*dest = val;
+}
+	\end{lstlisting}
+\end{sol}
+
+
 \end{document}
