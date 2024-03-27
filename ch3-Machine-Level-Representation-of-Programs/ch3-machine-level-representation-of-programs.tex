@@ -2037,5 +2037,552 @@ void switcher(long a, long b, long c, long *dest)
 	\end{lstlisting}
 \end{sol}
 
+\begin{ex}{3.32}
+	The disassembled code for two functions \texttt{first} and \texttt{last} is
+	shown below, along with the code for a call of \texttt{first} by function
+	\texttt{main}:
+	\begin{lstlisting}[language={}]
+	Disassembly of last(long u, long v)
+	u in %rdi, v in %rsi
+0000000000400540 <last>:
+	400540:  48 89 f8			mov		%rdi, %rax		// L1: u
+	400543:  48 0f af c6		imul	%rsi, %rax		// L2: u*v
+	400547:  c3					retq					// L3: Return
+
+	Disassembly of first(long x)
+	x in %rdi
+0000000000400548 <last>:
+	400548:  48 8d 77 01		lea		0x1(%rdi), %rsi	// F1: x+1
+	40054c:  48 83 ef 01		sub		$0x1,      %rdi	// F2: x-1
+	400550:  e8 eb ff ff ff		callq   400540 <last>   // F3: Call last(x-1,x+1)
+	400555:  f3 c3				repz retq				// F4: Return
+	.
+	.
+	.
+	400560:  e8 e3 ff ff ff		callq	400540 <first>	// M1: Call first(10)
+	400565:	 48 89 c2			mov		%rax,%rdx		// M2: Resume
+	\end{lstlisting}
+	Each of these instructions is given a label, similar to those in Figure 3.27(a).
+	Starting with the calling of \texttt{first(10)} by \texttt{main}, fill in the following
+	table to trace instruction execution through the point where the program returns back
+	to \texttt{main}.
+	\begin{center}
+		\begin{tabular}{ccccccccc}
+			\multicolumn{3}{c}{Instruction} & \multicolumn{5}{c}{State values (at beginning)} & {}\\
+			\hline
+			Label & PC & Instruction & \texttt{\%rdi} & \texttt{\%rsi} & \texttt{\%rax} &
+			\texttt{\%rsp} & \texttt{*\%rsp} & Description\\
+			\hline
+			M1 & \texttt{0x400560} & \texttt{callq} & 10 & --- & --- &  \texttt{0x7fffffffe820} & --- & Call \texttt{first(10)}\\
+			
+			F1 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			F2 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			F3 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+
+			L1 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			L2 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			L3 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			F4 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+			
+			M2 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} \\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	Each time a function call is made, the address is pushed onto the stack,
+	so the stack pointer is moved down by 8 bytes. (since an address is 64-bit).
+	For example, when \texttt{main} calls \texttt{first}, the return address on top
+	of the stack goes from \texttt{0x7fffffffe820} to \texttt{0x7fffffffe818}, 
+	a decrease by 8 bytes. Similarly, when \texttt{first} calls \texttt{last},
+	it decreases to \texttt{0x7fffffffe810}.
+	\begin{center}
+		\begin{tabular}{ccccccccc}
+			\multicolumn{3}{c}{Instruction} & \multicolumn{5}{c}{State values (at beginning)} & {}\\
+			\hline
+			Label & PC & Instruction & \texttt{\%rdi} & \texttt{\%rsi} & \texttt{\%rax} &
+			\texttt{\%rsp} & \texttt{*\%rsp} & Description\\
+			\hline
+			
+			M1 & \texttt{0x400560} & \texttt{callq} & 10 & --- & --- &  \texttt{0x7fffffffe820} & --- & Call \texttt{first(10)}\\
+			
+			F1 &\texttt{0x400548} & \texttt{lea} & 10
+			& -- & --- & \texttt{0x7fffffffe818}
+			& \texttt{0x400565} & Entry of \texttt{first} \\
+			
+			F2 & \texttt{0x40054c} & \texttt{sub} & 10
+			& 11 & --- & \texttt{0x7fffffffe818}
+			& \texttt{0x400565} & Subtract 1 from \texttt{x} \\
+			
+			F3 & \texttt{0x400550} & \texttt{callq} & 9
+			& 11 & --- & \texttt{0x7fffffffe818}
+			& \texttt{0x400565} & Call \texttt{last(9, 11)}\\
+			
+			L1 & \texttt{0x400540} & \texttt{mov} & 9
+			& 11 & --- & \texttt{0x7fffffffe810}
+			& \texttt{0x400555} & Entry of \texttt{last}\\
+			
+			L2 & \texttt{0x400543} & \texttt{imul} & 9
+			& 11 & 9 & \texttt{0x7fffffffe810}
+			& \texttt{0x400555} & Multiply \texttt{u*v} \\
+			
+			L3 & \texttt{0x400547} & \texttt{retq} & 9
+			& 11 & 99 & \texttt{0x7fffffffe810}
+			& \texttt{0x400555} & Return 99 from \texttt{last}\\
+			
+			F4 & \texttt{0x400555} & \texttt{repz retq} & 9
+			& 11 & 99 & \texttt{0x7fffffffe818}
+			& \texttt{0x400565} & Return 99 from \texttt{first} \\
+			
+			M2 & \texttt{0x400565} & \texttt{mov} & 9
+			& 116 & 99 & \texttt{0x7fffffffe820}
+			& --- & Resume \texttt{main} \\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.33}
+	A C function \texttt{procprob} has four arguments \texttt{u}, \texttt{a},
+	\texttt{v}, and \texttt{b}. Each is either a signed number or a pointer to
+	a signed number, where the numbers have different sizes. The function has
+	the following body:
+	\begin{lstlisting}
+*u += a;
+*v += b;
+return sizeof(a) + sizeof(b);
+	\end{lstlisting}
+	It compiles to the following x86-64 code:
+	\begin{lstlisting}[language={}]
+procprob:
+	movslq	%edi,	%rdi
+	addq	%rdi,	(%rdx)
+	addb	%sil,	(%rcx)
+	movl	$6,		%eax
+	ret
+	\end{lstlisting}
+	Determine a valid ordering and types of the four parameters. There are two
+	correct answers.
+\end{ex}
+
+\begin{sol}
+	\
+	The first argument is in \texttt{\%rdi}, the second in \texttt{\%rsi},
+	the third in \texttt{\%rdx}, and the fourth in \texttt{\%rcx}.
+	The \texttt{addq \%rdi, (\%rdx)} command corresponds to the statement \texttt{*u += a},
+	so \texttt{a} is the first argument, and \texttt{u} is the third argument.
+	Similarly, the \texttt{addb \%rsi, (\%rcx)} corresponds to the statement
+	\texttt{*v += b}, and \texttt{\%sil} is the lower byte of \texttt{\%rsi},
+	so \texttt{b} is the second argument and \texttt{v} is the 4th argument
+	
+	\
+	We are given that all arguments are signed integers
+	or pointers to signed integers. The \texttt{moveslq \%edi, \%rdi} sign extends the lower half
+	register of \texttt{\%rdi}, in this  case from 32-bit to 64-bit. Hence,
+	\texttt{a} must be a 32-bit integer (an \texttt{int}) and \texttt{v} must
+	be a pointer to a 64-bit integer (a \texttt{long *}). Since \texttt{a} is 4 bytes,
+	it must be that \texttt{b} is 2 bytes because \texttt{\%movl \$6, \%eax} implies
+	the sum of their sizes is 6 bytes, so \texttt{b} is a \texttt{short}. The
+	\texttt{addb \%sil, (\%rcx)} suggests an 8-bit operand, so \texttt{v} is a
+	pointer to a \texttt{char} (a \texttt{char *}). This means the function
+	signature would be
+	\begin{lstlisting}
+procprob(int a, short b, long *u, char *v);
+	\end{lstlisting} 
+\end{sol}
+
+\begin{ex}{3.34}
+	Consider a function \texttt{P}, which generates local values, named \texttt{a0-a8}.
+	It then calls function \texttt{Q} using these generated values as arguments. \texttt{gcc}
+	produces the following code for the first part of \texttt{P}:
+	\begin{lstlisting}[language={}]
+	long P(long x)
+	x in %rdi
+P:
+	pushq	%r15
+	pushq	%r14
+	pushq	%r13
+	pushq	%r12
+	pushq	%rbp
+	pushq	%rbx
+	subq	$24, %rsp
+	movq	%rdi, %rbx
+	leaq	1(%rdi), %r15
+	leaq	2(%rdi), %r14
+	leaq	3(%rdi), %r13
+	leaq	4(%rdi), %r12
+	leaq	5(%rdi), %rbp
+	leaq	6(%rdi), %rax
+	movq	%rax, (%rsp)
+	leaq	7(%rdi), %rdx
+	movq	%rdx, 8(%rsp)
+	movl	$0, %eax
+	call	Q
+	. . .
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Identify which local values get stored in callee-saved registers.
+		\item Identify which local values get stored on the stack.
+		\item Explain why the program could not store all of the local variables
+		in callee-saved registers.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The callee-saved registers are \texttt{\%rbx}, \texttt{\%rbp}, and
+		\texttt{\%r12} through \texttt{\%r15}. After pushing these values onto
+		the stack, \texttt{P} stores \texttt{x} at \texttt{\%rbx}, \texttt{x + 1}
+		in \texttt{\%rx15}, \texttt{x + 2} in \texttt{\%rx14}, \texttt{x + 3} in
+		\texttt{\%rx13}, \texttt{x + 4} in \texttt{\%rx12}, and \texttt{x + 5} in
+		\texttt{\%rbp}.
+		\item The value \texttt{x + 6} is saved at the top of the stack.
+		The value \texttt{x + 7} is saved at an 8-byte offset of the top-of-stack.
+		\item There are only 6 callee-saved registers, and to store \texttt{a0}
+		through \texttt{a8} requires 9 registers. Therefore, \texttt{P} must store
+		the remaining 3 on the stack. This explains the \texttt{subq \$24, \%rsp}
+		instruction, which allocates space on the stack for 3 local variables.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.35}
+	For a C function having the general structure
+	\begin{lstlisting}
+long rfun(unsigned long x) {
+	if (__________)
+		return ____________;
+	unsigned long nx = ___________;
+	long rv = rfun(nx);
+	return _________;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long rfun(unsigned long x)
+	x in %rdi
+rfun:
+	pushq	%rbx
+	movq	%rdi, %rbx
+	movl	$0, %eax
+	testq	%rdi, %rdi
+	je		.L2
+	shrq	$2, %rdi
+	call	rfun
+	addq	%rbx, %rax
+.L2:
+	popq	%rbx
+	ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What value does \texttt{rfun} store in the callee-saved register
+		\texttt{\%rbx}?
+		\item Fill in the missing expressions in the C code shown above.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item First we can annotate the assembly code:
+	\begin{lstlisting}[language={}]
+long rfun(unsigned long x)
+x in %rdi
+rfun:
+	pushq	%rbx			// Save %rbx
+	movq	%rdi, %rbx		// Store x in callee-saved register.
+	movl	$0, %eax		// Set return val to 0
+	testq	%rdi, %rdi		// Test x
+	je		.L2				// if == 0 goto .L2
+	shrq	$2, %rdi		// unsigned long nx = x >> 2; (logical right shift)
+	call	rfun			// Call rfun(nx)
+	addq	%rbx, %rax		// long rv = x + rfun(nx)
+.L2:
+	popq	%rbx			// Restore %rbx
+	ret						// Return
+	\end{lstlisting}
+	We conclude that \texttt{rfun} stores \texttt{x}, its sole argument,
+	in the callee-saved register \texttt{\%rbx}, after saving the existing value on
+	the stack, and restoring it before returning.
+	\item The C code is as follows:
+		\begin{lstlisting}
+long rfun(unsigned long x) {
+	if (x == 0)
+		return 0;
+	unsigned long nx = x >> 2;
+	long rv = rfun(nx);
+	return x + rv;
+}
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.36}
+	Consider the following declarations 
+	\begin{lstlisting}
+short	  S[7];
+short	 *T[3];
+short	**U[6];
+int		  V[8];
+double	 *W[4];
+	\end{lstlisting}
+	Fill in the following table describing the element size, the total size, and
+	the address of element $i$ for each of these arrays.
+	\begin{center}
+		\begin{tabular}{ccccc}
+			Array & Element Size & Total size & Start address & Element $i$\\
+			\hline
+			\texttt{S} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $x_S$ & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{T} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $x_T$ & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{U} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $x_U$ & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{V} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $x_V$ & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{W} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $x_W$ & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The sizes in the brackets constitute the number of elements. The element
+	size is given by the type, where \texttt{short} is 2 bytes, \texttt{int}
+	is 4 bytes, and all pointer types are \texttt{8} bytes. From this, the
+	table is as follows:
+	\begin{center}
+		\begin{tabular}{ccccc}
+			Array & Element Size & Total size & Start address & Element $i$\\
+			\hline
+			\texttt{S} & 2 & 14 & $x_S$ & $x_S + 2i$\\
+			
+			\texttt{T} & 8 & 24 & $x_T$ & $x_T + 8i$\\
+			
+			\texttt{U} & 8 & 48 & $x_U$ & $x_U + 8i$\\
+			
+			\texttt{V} & 4 & 32 & $x_V$ & $x_V + 4i$\\
+			
+			\texttt{W} & 8 & 32 & $x_W$ & $x_W +  8i$\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.37}
+	Suppose $x_S$, the address of short integer array \texttt{S}, and long
+	integer index $i$ are stored in registers \texttt{\%rdx} and \texttt{\%rcx}, respectively.
+	For each of the following expressions, give its type, a formula for its
+	value, and an assembly-code implementation. The result should be stored
+	in register \texttt{\%rax} if it is a pointer and register element \texttt{\%ax} if it
+	has data type \texttt{short}.
+	\begin{center}
+		\begin{tabular}{cccc}
+			Expression & Type & Value & Assembly code\\
+			\hline
+			\texttt{S+1} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{S[3]} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{\&S[i]} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{S[4*i+1]} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{S+i-5} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	I used the fact that \texttt{short} is 2 bytes, and \texttt{long} is 8 bytes.
+	Since 2 bytes is a ``word", we use \texttt{movw} for data movements.
+	\begin{center}
+		\begin{tabular}{cccc}
+			Expression & Type & Value & Assembly code\\
+			\hline
+			\texttt{S+1} & \texttt{short *} & $x_S+2$ & \texttt{leaq 2(\%rdx), \%rax}\\
+			
+			\texttt{S[3]} & \texttt{short} & M$[x_S+6]$ & \texttt{movw 6(\%rdx), \%ax}\\
+			
+			\texttt{\&S[i]} & \texttt{short *} & $x_S + 2i$ & \texttt{leaq (\%rdx,\%rcx,2), \%rax}\\
+			
+			\texttt{S[4*i+1]} & \texttt{short } & M$[x_S+8i+2]$ & \texttt{movw 2(\%rdx, \%rcx, 8), \%ax}\\
+			
+			\texttt{S+i-5} & \texttt{short *} & $x_S+2i-10$ & \texttt{leaq -10(\%rdx, \%rcx,2), \%rax}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.38}
+	Consider the following source code, where $M$ and $N$ are constants declared with
+	\texttt{\#define}:
+	\begin{lstlisting}
+long P[M][N];
+long Q[N][M];
+
+long sum_element(long i, long j) {
+	return P[i][j] + Q[j][i];
+}
+	\end{lstlisting}
+	In compiling this program, \texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long sum_element(long i, long j)
+	i in %rdi, j in %rsi
+sum_element:
+	leaq	0(,%rdi,8),	%rdx
+	subq	%rdi, %rdx
+	addq	%rsi, %rdx
+	leaq	(%rsi,%rsi,4), %rax
+	addq	%rax, %rdi
+	movq	Q(,%rdi,8), %rax
+	addq	P(,%rdx,8), %rax
+	ret
+	\end{lstlisting}
+	Use your reverse engineering skills to determine the values $M$ and $N$ based on
+	this assembly code.
+\end{ex}
+
+\begin{sol}
+	\
+	Note that \texttt{long} is of size 8 bytes. The address \texttt{\&P[i][j]}
+	is given by $x_P + 8(N\cdot i + j)$, whereas \texttt{\&Q[j][i]} is given by
+	$x_Q + 8(M\cdot j + i)$.
+	First we can annotate the assembly:
+		\begin{lstlisting}[language={}]
+	long sum_element(long i, long j)
+	i in %rdi, j in %rsi
+sum_element:
+	leaq	0(,%rdi,8),	%rdx		// long a = 8i
+	subq	%rdi, %rdx				// a = a - i /* now a is 7i */
+	addq	%rsi, %rdx				// a = a + j /* now a is 7i + j */
+	leaq	(%rsi,%rsi,4), %rax		// long b = j + 4j /* now it is 5j */
+	addq	%rax, %rdi				// long c = i + b /* c = i + 5j */
+	movq	Q(,%rdi,8), %rax		// result = M[Q + 8*c]
+	addq	P(,%rdx,8), %rax		// result += M[P + 8*a]
+	ret
+		\end{lstlisting}
+		Based on the annotations, \texttt{\&Q[j][i]} is $x_Q + 8(5j+i)$, and
+		\texttt{\&P[i][j]} is $x_P + 8(7i + j)$. Hence, $N=7$, and $M=5$.
+\end{sol}
+
+\begin{ex}{3.39}
+	Use Equation 3.1 to explain how the computations of the initial values for
+	\texttt{Aptr}, \texttt{Bptr}, and \texttt{Bend} in the C code in Figure 3.37(b)
+	(lines 3-5) correctly describe their computations in the assembly code generated
+	for \texttt{fix\_prod\_ele} (lines 3-5).
+\end{ex}
+
+\begin{sol}
+	\
+	Equation 3.1 says that if $T$ is a data type of size $L$, then given the array
+	\begin{lstlisting}
+T D[R][C];
+	\end{lstlisting}
+	with $R$ rows and $C$ columns, the array element \texttt{D[i][j]} is at memory
+	address
+	\[
+	\&D[i][j]=x_D+L(C\cdot i+j)
+	\]
+	where $x_D$ is the address of $D$. Recall that \texttt{A} and \texttt{B} are
+	of types \texttt{int[16][16]}. To access \texttt{A[i][0]}, the first element
+	in the $i$-th row, we have $L=4$ because \texttt{int} takes up 4 bytes, and
+	$C$ is 16, so
+	\[
+	\&A[i][0]=x_A+4(16\cdot i + 0)=x_A+64i
+	\]
+	Similarly, to access \texttt{B[0][k]}, the first element in the $k$-th column
+	we have $L=4$ because \texttt{int} takes up 4 bytes, and $C$ is 16, so
+	\[
+	\&B[0][k]=x_B+4(16\cdot 0 + k)=x_B+4k
+	\]
+	Finally, to access the first element beyond the $k$-th column, namely, the
+	first (thus marking the end of column $k$ of \texttt{B}), and recalling
+	that $N=16$, we have
+	\[
+	\&B[N][k]=x_B+4(16\cdot N + k)=x_B+4(16\cdot 16+k)=x_B+1024+4k
+	\]
+\end{sol}
+
+\begin{ex}{3.40}
+	The following C code sets the diagonal elements of one of our fixed-sized arrays
+	to \texttt{val}:
+	\begin{lstlisting}
+/* Set all diagonal elements to val */
+void fix_set_diag(fix_matrix A, int val) {
+	long i;
+	for (i = 0; i < N; i++)
+		A[i][i] = val;
+}
+	\end{lstlisting}
+	When compiled with optimization level \texttt{-O1}, \texttt{gcc} generates the
+	following assembly code:
+	\begin{lstlisting}[language={}]
+	void fix_set_diag(fix_matrix A, int val)
+	A in %rdi, val in %rsi
+fix_set_diag:
+	movl	$0, %eax
+.L13:
+	movl	%esi, (%rdi,%rax)
+	addq	$68, %rax
+	cmpq	$1088, %rax
+	jne		.L13
+	rep; ret
+	\end{lstlisting}
+	Create a C code program \texttt{fix\_set\_diag\_opt} that uses optimizations similar
+	to those in the assembly code, in the same style as the code in Figure 3.37(b). Use
+	expressions involving the parameter $N$ rather than integer constants, so that your code
+	will work correctly if $N$ is redefined.
+\end{ex}
+
+\begin{sol}
+	\
+	First we can annotate the assembly:
+	\begin{lstlisting}[language={}]
+	void fix_set_diag(fix_matrix A, int val)
+	A in %rdi, val in %rsi
+fix_set_diag:
+	movl	$0, %eax			// i = 0
+.L13:
+	movl	%esi, (%rdi,%rax)	// M[A + i] = val
+	addq	$68, %rax			// i += 16 * 4 + 4
+	cmpq	$1088, %rax			// compare i:(4*(16*16 + 16)), N = 16
+	jne		.L13				// if != go to .L13
+	rep; ret					// Return
+	\end{lstlisting}
+	Based on the annotations, we can produce the following C code:
+	\begin{lstlisting}
+/* (Optimized) Set all diagonal elements to val */
+void fix_set_diag_opt(fix_matrix A, int val) {
+	int i = 0;				/* Running index */
+	int last = N * N + N;	/* Index is one beyond end */
+	do {
+		A[i] = val;
+		i += (N + 1);
+	} while (i != last);
+}
+	\end{lstlisting}
+\end{sol}
+
 
 \end{document}
