@@ -2584,5 +2584,1180 @@ void fix_set_diag_opt(fix_matrix A, int val) {
 	\end{lstlisting}
 \end{sol}
 
+\begin{ex}{3.41}
+	Consider the following structure declaration:
+	\begin{lstlisting}
+struct prob {
+	int *p;
+	struct {
+		int x;
+		int y;
+	} s;
+	struct prob *next;
+};
+	\end{lstlisting}
+	This declaration illustrates that one structure can be embedded within another,
+	just as arrays can be embedded within structures and arrays can be embedded within
+	arrays. The following procedure (with some expressions omitted) operates on this
+	structure:
+	\begin{lstlisting}
+void sp_init(struct prob *sp) {
+	sp->s.x  = ________;
+	sp->p    = ________;
+	sp->next = ________;
+}
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What are the offsets (in bytes) of the following fields?
+		\begin{center}
+			\begin{tabular}{cc}
+				\texttt{p}: & \makebox[1cm]{\hrulefill}\\
+				\texttt{s.x}: & \makebox[1cm]{\hrulefill}\\
+				\texttt{s.y}: & \makebox[1cm]{\hrulefill}\\
+				\texttt{next}: & \makebox[1cm]{\hrulefill}\\
+			\end{tabular}
+		\end{center}
+		\item How many total bytes does the structure require?
+		\item The compiler generates the following assembly code for
+		\texttt{sp\_init}:
+		\begin{lstlisting}[language={}]
+	void sp_init(struct prob *sp)
+sp_init:
+	movl	12(%rdi), %eax
+	movl	%eax, 8(%rdi)
+	leaq	8(%rdi), %rax
+	movq	%rax, (%rdi)
+	movq	%rdi, 16(%rdi)
+	ret
+		\end{lstlisting}
+		On the basis of this information, fill in the missing expressions in the
+		code for \texttt{sp\_init}.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The offsets are determined by the size of the type of each
+		field, as follows:
+		\begin{center}
+			\begin{tabular}{cc}
+				Field & Byte Offset\\
+				\hline
+				\texttt{p}: & 0 bytes\\
+				\texttt{s.x}: & 8 bytes\\
+				\texttt{s.y}: & 12 bytes\\
+				\texttt{next}: & 16 bytes\\
+			\end{tabular}
+		\end{center}
+		\item The structure required 24 bytes.
+		\item The annotated assembly is
+			\begin{lstlisting}[language={}]
+	void sp_init(struct prob *sp)
+	sp in %rdi
+sp_init:
+	movl	12(%rdi), %eax	// int y = sp->y;
+	movl	%eax, 8(%rdi)	// sp->s.x = y;
+	leaq	8(%rdi), %rax	// s = &(sp->s.x)
+	movq	%rax, (%rdi)	// sp->p = s
+	movq	%rdi, 16(%rdi)	// r->next = sp
+	ret
+			\end{lstlisting}
+		The corresponding C code is:
+			\begin{lstlisting}
+void sp_init(struct prob *sp) {
+	sp->s.x  = sp->y;
+	sp->p    = &(sp->s.x);
+	sp->next = sp;
+}
+			\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.42}
+	The following code shows the declaration of a structure of type \texttt{ELE}
+	and the prototype for a \texttt{fun}:
+	\begin{lstlisting}
+struct ELE {
+	long 	v;
+	struct ELE *p;
+};
+
+long fun(struct ELE *ptr);
+	\end{lstlisting}
+	When the code for \texttt{fun} is compiled, \texttt{gcc} generates the following
+	assembly code:
+	\begin{lstlisting}[language={}]
+	long fun(struct ELE *ptr)
+	ptr in %rdi
+fun:
+	movl	$0, %eax
+	jmp		.L2
+.L3:
+	addq	(%rdi), %rax
+	movq	8(%rdi), %rdi
+.L2:
+	testq	%rdi, %rdi
+	jne		.L3
+	rep; ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Use your reverse engineering skills to write C code for \texttt{fun}.
+		\item Describe the data structure that this structure implements and the
+		operation performed by \texttt{fun}.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\begin{enumerate}[label=(\alph*)]
+		\item The annotated assembly is below:
+		\begin{lstlisting}[language={}]
+	long fun(struct ELE *ptr)
+	ptr in %rdi
+fun:
+	movl	$0, %eax		// long result = 0;
+	jmp		.L2				// goto .L2
+.L3:
+	addq	(%rdi), %rax	// result += *ptr;
+	movq	8(%rdi), %rdi	// ptr++;
+.L2:
+	testq	%rdi, %rdi		// test ptr
+	jne		.L3				// if != NULL goto .L3
+	rep; ret
+		\end{lstlisting}
+		The C implementation of \texttt{fun} is:
+		\begin{lstlisting}
+long fun (struct ELE *ptr) {
+	long result = 0;
+	while (ptr != NULL) {
+		result += *ptr;
+		ptr++;
+	}
+	return result;
+}
+		\end{lstlisting}
+		\item The data type \texttt{struct ELE} implements a linked list, and the
+		function \texttt{fun} computes the sum of all the elements in it.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.43}
+	Suppose you are given the job of checking that a C compiler generates the proper
+	code for structure and union access. You write the following structure declaration:
+	\begin{lstlisting}
+typedef union {
+	struct {
+		long	u;
+		short	v;
+		char 	w;
+	} t1;
+	struct {
+		int a[2];
+		char *p;
+	} t2;
+} u_type;
+	\end{lstlisting}
+	You write a series of functions of the form
+	\begin{lstlisting}
+void get(u_type *up, type *dest) {
+	*dest = expr;
+}
+	\end{lstlisting}
+	with different access expressions \texttt{expr} and with destination data type \texttt{type}
+	set according to the type associated with \texttt{expr}. You then examine the code
+	generated when compiling the functions to see if they match your expectations.
+	
+	\
+	Suppose in these functions that  \texttt{up} and \texttt{dest} are loaded into registers
+	\texttt{\%rdi} and \texttt{\%rsi}, respectively. Fill in the following table with data
+	type \emph{type} and sequences of one to three instructions to compute the expression
+	and store the result at \texttt{dest}.
+	\begin{center}
+		\begin{tabular}{ccc}
+			\emph{expr} & \emph{type} & Code\\
+			\hline
+			\texttt{up->t1.u} & \texttt{long} & \texttt{movq (\%rdi), \%rax}\\
+			{} & {} & \texttt{movq \%rax, (\%rsi)}\\
+			
+			\texttt{up->t1.v} & \makebox[1cm]{\hrulefill} & \makebox[3cm]{\hrulefill}\\
+			{} & {} & \makebox[3cm]{\hrulefill}\\
+			
+			\texttt{\&up->t1.w} & \makebox[1cm]{\hrulefill} & \makebox[3cm]{\hrulefill}\\
+			{} & {} & \makebox[3cm]{\hrulefill}\\
+			
+			\texttt{up->t2.a} & \makebox[1cm]{\hrulefill} & \makebox[3cm]{\hrulefill}\\
+			{} & {} & \makebox[3cm]{\hrulefill}\\
+			
+			\texttt{up->t2.a[up->t1.u]} & \makebox[1cm]{\hrulefill} & \makebox[3cm]{\hrulefill}\\
+			{} & {} & \makebox[3cm]{\hrulefill}\\
+			
+			\texttt{*up->t2.p} & \makebox[1cm]{\hrulefill} & \makebox[3cm]{\hrulefill}\\
+			{} & {} & \makebox[3cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The union structure of type \texttt{u\_type} has a size that is the maximum of its
+	member fields, subject to proper alignment. Its field \texttt{t1} is a structure
+	is a structure with a \texttt{long}, a \texttt{short}, and \texttt{char}, whose
+	overall size is $8+2+1=11$ bytes. Its other field, \texttt{t2}, has an \texttt{int[2]}
+	array and a \texttt{char *}, both of which take up 8 bytes, for a total of 16 bytes.
+	Therefore, \texttt{u\_type} takes up 16 bytes.
+	
+	\
+	In a union, the address of each field is the same as the union object itself. In practice,
+	this means that \texttt{up->t1} and \texttt{up->t2} both reference the beginning of the
+	data structure. This can be seen in the code for the first entry of the table provided,
+	for the expression \texttt{up->t1.u}, whose first associated instruction is
+	\texttt{movq (\%rdi), \%rax}. Because \texttt{up} and \text{up->t1} both refer to the
+	beginning of the data structure, and because the offset of the first field \texttt{u}
+	in the data structure for \texttt{t1} is also at the beginning of that data structure,
+	we can see that their addresses are all the same (here, \texttt{\%rdi}).
+	
+	\
+	Since the first field of \texttt{up->t1} is \texttt{up->t.u}, an 8-byte \texttt{long},
+	this means that the next field \texttt{up->t1.v} is at an 8 byte offset. Next,
+	since \texttt{u} and \texttt{v} in struct \texttt{t1} are an 8-byte \texttt{long} and
+	a 2-byte \texttt{short}, respectively, it follows that \texttt{up->t1.w} is at a 10-byte
+	offset. Moreover, the address operator \texttt{\&} causes the expression to return
+	a pointer (in this case, a \texttt{char *}). The \texttt{up->t2.a} refers to the first location as \texttt{up}, as explained before. However, \texttt{a} is an \texttt{int *} pointer.
+	The next expression, \texttt{up->t2.a[up->t1.u]}, requires
+	three instructions: one to compute the index given by \texttt{up->t1.u}, a memory reference
+	that is stored in a register, and then a move from the register to \texttt{(\%rsi)}.
+	The latter steps must be broken into two because when a memory location is a destination in 
+	an instruction, the source cannot also be a memory location. The last expression,
+	\texttt{*up->t2.p}, dereferences the member pointer \texttt{p}, so the expression
+	has type \texttt{char}. The reference \texttt{up->t2.p} is at an 8-byte offset since
+	it follows the 8-byte \texttt{int[2]} array in \texttt{t2}. Once again we need three instructions,
+	because we need one instruction to compute the value of \texttt{p} before the instruction to
+	dereference it, and once again, we need to put its value at a register because a
+	memory reference cannot be the source and destination of an instruction.
+	\begin{center}
+		\begin{tabular}{ccc}
+			\emph{expr} & \emph{type} & Code\\
+			\hline
+			\texttt{up->t1.u} & \texttt{long} & \texttt{movq (\%rdi), \%rax}\\
+			{} & {} & \texttt{movq \%rax, (\%rsi)}\\
+			
+			\texttt{up->t1.v} & \texttt{short} & \texttt{movw 8(\%rdi), \%ax} \\
+			{} & {} & \texttt{movw \%ax, (\%rsi)}\\
+			
+			\texttt{\&up->t1.w} & \texttt{char *} & \texttt{leaq 10(\%rdi), \%rax} \\
+			{} & {} & \texttt{movw \%rax, (\%rsi)}\\
+			
+			\texttt{up->t2.a} & \texttt{int *} & \texttt{leaq (\%rdi), \%rax}\\
+			{} & {} & \texttt{movq \%rax, (\%rsi)}\\
+			
+			\texttt{up->t2.a[up->t1.u]} & \texttt{int} & \texttt{movq (\%rdi), \%rax}\\
+			{} & {} & \texttt{movl (\%rdi, \%rax, 4), \%eax}\\
+			{} & {} & \texttt{movl \%eax, (\%rsi)}\\
+			
+			\texttt{*up->t2.p} & \texttt{char} & \texttt{movq 8(\%rdi), \%rax} \\
+			{} & {} & \texttt{movb (\%rax), \%al}\\
+			{} & {} & \texttt{movb \%al, (\%rsi)}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.44}
+	For each of the following structure declarations, determine the offset of each field,
+	the total size of the structures, and its alignment requirement for x86-64:
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{struct P1 \{ int i; char c; int j; char d; \};}
+		\item \texttt{struct P2 \{ int i; char c; char d; long j; \};}
+		\item \texttt{struct P3 \{ short w[3]; char c[3]; \};}
+		\item \texttt{struct P4 \{ short w[5]; char *c[3]; \};}
+		\item \texttt{struct P5 \{ struct P3 a[2]; struct P2 t; \};}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item For \texttt{struct P1}, the \texttt{int i} has 0 offset, the \texttt{char c}
+		has offset 4, given that \texttt{i} takes up 4 bytes. The \texttt{int j} field
+		has alignment 8, where 3 bytes of padding are added right after \texttt{char c}
+		to ensure it has a proper 4-byte element. Finally, \texttt{char d} has
+		offset 12, given that \texttt{int j} has an offset of 8 bytes and its size
+		is 4 bytes. Since the last field is 1 byte, this would suggest a total of 13
+		bytes, but to satisfy alignment requirements in arrays, a total of 3 bytes
+		of adding is added at the end. Therefore, \texttt{struct P1} has 16 bytes total.
+		It has 4 byte alignment to satisfy the 
+		
+		\item By a similar reasoning, in \texttt{struct P2}, the field \texttt{int i}
+		has offset 0, \texttt{char c} has offset 4, \texttt{char d} has offset 5, \texttt{long j}
+		has offset 8. Altogether, the structure takes up 16 bytes, with 2 bytes of padding
+		between \texttt{char d} and \texttt{long j}. It requires 8 byte alignment to satisfy
+		the restriction of all of it fields.
+		
+		\item The \texttt{short w[3]} field in \texttt{struct P3} has offset 0. Since
+		\texttt{short} is 2 bytes, it takes up 6 bytes, so the \texttt{char c[3]} has
+		an offset of 6 bytes, ensuring that the alignment for \texttt{w} is satisfied.
+		Since \texttt{char c[3]} takes up 3 bytes, this would imply 9 byte alignment,
+		but to ensure the alignment restrictions are satisfied by fields of \texttt{struct P3}
+		when packed into an array, we need 1 byte of padding to achieve 2-byte alignment.
+		Therefore, \texttt{struct P3} takes up 10 bytes overall, with 1 byte of padding at the end.
+		It has 2 byte alignment to satisfy the restriction of all of its elements.
+		
+		\item In \texttt{struct P4}, the field \texttt{short w[5]} is at offset 0, and
+		it takes up 10 bytes. Since \texttt{char *c[3]} has \texttt{char *} elements, 
+		each taking up 8 bytes, the overall structure require 8 byte alignment. Therefore,
+		6 bytes of padding are added after \texttt{short w[5]}, so that the offset of
+		\texttt{char *c[3]} is 16 bytes. Since \texttt{c} has 3 elements, it takes up 24 bytes,
+		and hence the overall structure takes up 40 bytes. Its alignment is 8 bytes.
+		
+		
+		\item Since \texttt{P3} takes up 10 bytes, the field \texttt{struct P3 a[2]} takes up
+		20 bytes. But \texttt{P2} takes up 16 bytes, and due to its field it has an 8-byte
+		alignment restriction. Therefore, 4 bytes of padding are added so that \texttt{struct P2 t}
+		has offset 24 bytes. Overall, the structure takes up 40 bytes and has 8 byte alignment.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.45}
+	Answer the following for the following declaration
+	\begin{lstlisting}
+struct {
+	char	*a;
+	short	 b;
+	double	 c;
+	char	 d;
+	float	 e;
+	char	 f;
+	long	 g;
+	int		 h;
+} rec;
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What are the byte offsets of all the fields in the structure?
+		\item What is the total size of the structure?
+		\item Rearrange the fields of the structure to minimize wasted space, and then
+		show the byte offsets and total size for the rearranged structure.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{char *a} has byte offset 0 and takes up 8 bytes. \texttt{short b} has byte offset 8
+		and takes up 2 bytes. It requires 6 bytes of padding to ensure \texttt{double c}, the next field,
+		has a required alignment of 8 bytes. Therefore, \texttt{double c} has a 16 byte offset and takes up
+		8 bytes. The next field \texttt{char d} has 24 byte offset and takes up 1 byte. For properly
+		aligning the next field, \texttt{float e} taking up 4 bytes, 3 bytes of padding are needed.
+		Therefore \texttt{float e} has 28 byte offset. The next field, \texttt{char f}, has 32 byte offset.
+		Since takes up 1 byte is followed by an 8 byte \texttt{long}, it requires 7 bytes of padding.
+		Hence, \texttt{long g} has a 40 byte offset, and lastly, \texttt{int h} has a 48 byte offset.
+		\item Since \texttt{int h} takes up 4 bytes, we require 4 bytes of padding at the end to ensure that
+		an array of these structures satisfies the byte alignment for all of it fields. Therefore,
+		the structure takes up 56 bytes.
+		\item We can re-arrange the fields and compute the new offsets:
+		\begin{lstlisting}
+struct {
+	char	*a;	// offset 0
+	double	 c;	// offset 8
+	long	 g;	// offset 16
+	float	 e;	// offset 24
+	int		 h;	// offset 28
+	short	 b;	// offset 32
+	char	 d;	// offset 34
+	char	 f;	// offset 35
+};
+		\end{lstlisting}
+		The offsets are shown above. There is no padding in between any of the offsets,
+		and the sum of the sizes of the fields is 36 bytes. Since the structure has fields that
+		require 8 byte alignment, we need to add 4 bytes of padding, making the structure 40
+		bytes in size.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.46}
+	The C code below: shows a (low-quality) implementation of a function that reads a line from standard input,
+	copies the string to newly allocated storage, and returns a pointer to the result:
+	\begin{lstlisting}
+/* This is very low-quality code
+   It is intended to illustrate bad programming practices.
+   See Practice Problem 3.46 */
+char *get_line()
+{
+	char buf[4];
+	char *result;
+	gets(buf);
+	result = malloc(strlen(buf));
+	strcpy(result, buf);
+	return result;
+}
+	\end{lstlisting}
+	The disassembly up through call to \texttt{gets} is below:
+	\begin{lstlisting}[language={}]
+//	char *get_line()
+0000000000400720 <get_line>:
+	400720:	53						push	%rbx
+	400721:	48 83 ec 10				sub		$0x10,%rsp
+//	Diagram stack at this point
+	400725:	48 89 e7				mov		%rsp,%rdi
+	400728: e8 73 ff ff ff			callq	4006a0 <gets>
+// Modify diagram to show stack content at this point
+	\end{lstlisting}
+	Consider the following scenario. Procedure \texttt{get\_line} is called with the return address
+	equal to \texttt{0x400776} and register \texttt{\%rbx} equal to \texttt{0x0123456789ABCDEF}.
+	You type the string
+	\begin{center}
+		\texttt{0123456789012345678901234}
+	\end{center}
+	The program terminates with a segmentation fault. You run \texttt{gdb} and determine that the
+	error occurs during the execution of the \texttt{ret} instruction of \texttt{get\_line}.
+	\begin{enumerate}[label=(\alph*)]
+		\item Fill in the diagram that follows, indicating as much as you can about the stack
+		just after executing the instruction in line 3 in the disassembly. Label the quantities
+		stored on the stack (e.g., ``Return address") on the right, and their hexadecimal values
+		(if known) within the box. Each box represents 8 bytes. Indicate the position of \texttt{\%rsp}.
+		Recall that the ASCII codes for characters \texttt{0-9} are \texttt{0x30}-\texttt{0x39}.
+		\begin{center}
+			\begin{tabular}{|cccccccc|c|}
+				\hline
+				\texttt{00} & \texttt{00} & \texttt{00} & \texttt{00} & \texttt{00} & \texttt{40}&
+				\texttt{00} & \texttt{76} & Return Address\\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & \\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & \\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & \\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\item Modify your diagram to show the effect of the call to \texttt{gets} (line 5).
+		\item To what address does the program attempt to return?
+		\item What register(s) have corrupted value(s) when \texttt{get\_line} returns?
+		\item Besides the potential for buffer overflow, what two other things are
+		wrong with the code for \texttt{get\_line}?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item When \texttt{get\_line} is called, the return address of its caller is at the
+		top of the stack, as indicated by the first entry in the diagram. The first instruction
+		\texttt{pushq \%rbx} places the contents of \texttt{\%rbx} on the top of the stack.
+		The next instruction, \texttt{\$0x10}, allocates \texttt{16} bytes of space on the stack,
+		since hexadecimal \texttt{0x10} has decimal value 16. At this point, there may
+		have been a pre-existing value we do not know about.
+		\begin{center}
+			\begin{tabular}{|cccccccc|c|}
+				\hline
+				\texttt{00} & \texttt{00} & \texttt{00} & \texttt{00} & \texttt{00} & \texttt{40}&
+				\texttt{00} & \texttt{76} & Return Address\\
+				\hline
+				\texttt{01} & \texttt{23} & \texttt{45} & \texttt{67} & \texttt{89} & \texttt{AB}&
+				\texttt{CD} & \texttt{EF} & Value of \texttt{\%rbx}\\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & Unused \\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & Address of \texttt{buf} (top of stack \texttt{\%rsp})\\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\item The instruction \texttt{mov \%rsp, \%rdi} on line 4 indicates that the address of
+		\texttt{buf} is at the top of the stack, and passed as an argument to \texttt{gets}.
+		Since \texttt{gets} reads in the string
+		\begin{center}
+			\texttt{0123456789012345678901234}
+		\end{center}
+		which is 25 bytes long, plus 1 extra byte due to the null terminator character used in C strings,
+		we find that the space allocated for \texttt{buf} is exceeded. The diagram looks as follows now:
+		\begin{center}
+			\begin{tabular}{|cccccccc|c|}
+				\hline
+				\texttt{00} & \texttt{00} & \texttt{00} & \texttt{00} & \texttt{00} & \texttt{40}&
+				\texttt{00} & \texttt{34} & Return Address\\
+				\hline
+				\texttt{33} & \texttt{32} & \texttt{31} & \texttt{30} & \texttt{39} & \texttt{38}&
+				\texttt{37} & \texttt{36} & \texttt{\%rbx}, overwritten\\
+				\hline
+				\texttt{35} & \texttt{34} & \texttt{33} & \texttt{32} & \texttt{31} & \texttt{30}&
+				\texttt{39} & \texttt{38} & Next 8 bytes in \texttt{buf} (8 through 9, 0 through 5) \\
+				\hline
+				\texttt{37} & \texttt{36} & \texttt{35} & \texttt{34} & \texttt{33} & \texttt{32}&
+				\texttt{31} & \texttt{30} & Address of \texttt{buf} (top of stack \texttt{\%rsp}) \\
+				\hline
+				\texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{} & \texttt{}&
+				\texttt{} & \texttt{} & \\
+				\hline
+			\end{tabular}
+		\end{center}
+		Note that \texttt{\%rbx} was completely overwritten, and so were the first two bytes of the
+		return address.
+		\item The return address is now \texttt{0x0000000000400034}.
+		\item Register \texttt{\%rbx} was completely overwritten with the hexadecimal
+		representation of characters \texttt{67890123} from the input string. Since this is a callee-saved
+		register, the \texttt{get\_line} function will attempt to restore it right before it returns,
+		and hence it will restore a value different than what the caller expects.
+		
+		
+		The first byte in register \texttt{\%rsp} was overwritten with \texttt{0x34}, corresponding to the
+		last input \texttt{4}, and the second byte \texttt{0x00} was overwritten by the same
+		value \texttt{0x00} corresponding to the string null terminator.
+		
+		\item It does not provide the extra character necessary for the null terminator; that is, it should
+		be \texttt{strlen(buf) + 1} It does not check the return value of \texttt{gets}, which
+		may be \texttt{NULL}. The code does not check whether \texttt{malloc} was successful. When
+		\texttt{malloc} does not execute successfully (may there is no more memory available),
+		it returns \texttt{NULL}. Passing this to \texttt{strcpy} will result in a segmentation fault
+		as it tries to dereference the point while copying bytes.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.47}
+	Running our stack-checking code 10,000 times on a system running Linux version 2.6.16, we obtained
+	addresses ranging from a minimum of \texttt{0xffffb754} to a maximum of \texttt{0xffffd754}.
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the approximate range of addresses?
+		\item If we attempted to overrun with a 128-byte nop slep, about how many attempts would it
+		take to test all starting addresses?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Since \texttt{0xb754} is 46,932 decimal and \texttt{0xd754} is 55,124
+		Subtracting the addresses yields around \texttt{0x2000}, which is around $2\cdot 16^3=2^{13}=8192$.
+		\item Since $128=2^{7}$, and a nop-slep essentially starts goes from addresses 0 through 127 in
+		the first attempt, then 128 through 255, and so on, we essentially have $\frac{2^{12}}{2^{7}}=2^6=64$.
+		It would take 64 attempts to test all starting addresses.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.48}
+	The function \texttt{intlen}, \texttt{len}, and \texttt{iptoa} provide a very convoluted way
+	to compute the number of decimal digits required to represent an integer. We will use this as a
+	way to study some of aspects of the \texttt{gcc} stack protector facility.
+	\begin{lstlisting}
+int len(char *s) {
+	return strlen(s);
+}
+
+void iptoa(char *s, long *p) {
+	long val = *p;
+	sprintf(s, "%ld", val);
+}
+
+int intlen(long x) {
+	long v;
+	char buf[12];
+	v = x;
+	iptoa(buf, &v);
+	return len(buf);
+}
+	\end{lstlisting}
+	The following show portions of the code for \texttt{inlen}, compiled both with and without
+	stack pointer protector. First, without protector:
+	\begin{lstlisting}[language={}]
+	// int intlen(long x)
+	// x in %rdi
+intlen:
+	subq	$40,		%rsp
+	movq	%rdi,		24(%rsp)
+	leaq	24(%rsp), 	%rsi
+	movq	%rsp,		%rdi
+	call	iptoa
+	\end{lstlisting}
+	With protector:
+	\begin{lstlisting}[language={}]
+	int intlen(long x)
+	x in %rdi
+intlen:
+	subq	$56,	%rsp
+	movq	%fs:40,	%rax
+	movq	%rax,	40(%rsp)
+	xorl	%eax,	%eax
+	movq	%rdi,	8(%rsp)
+	leaq	8(%rsp), %rsi
+	leaq	16(%rsp), %rdi
+	call iptoa
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item For both versions: What are the positions in the stack for \texttt{buf}, \texttt{v},
+		and (when present) the canary value?
+		\item How does the rearranged ordering of the local variables in the protected code
+		provide greater security against a buffer overrun attack?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item For the version without stack protector, the first instruction
+		\texttt{subq \$40, \%rsp} indicates we are allocating 40 bytes on the stack.
+		The \texttt{movq \%rdi, 24(\%rsp)} is the assignment of\texttt{x} to \texttt{v}.
+		Therefore, \texttt{v} is as at an offset of 24 bytes from the top of the stack.
+		The line \texttt{movq \%rsp, \%rdi} indicates that we are passing \texttt{buf}
+		as the first argument of \texttt{iptoa}. This indicates that \texttt{buf} is
+		at the top of the stack.
+		
+		\
+		For the version with stack protector, space is allocated on the stack for 56 bytes.
+		In this case, the canary value by the \texttt{movq \%fs:40, \%rax} instruction into
+		the \texttt{\%rax} register, and its value is loaded into the memory location
+		at a 40 byte offset of the top of the stack, as indicated by \texttt{movq \%rax, 40(\%rsp)}.
+		In this case, \texttt{leaq 16(\%rsp), \%rdi} indicates that buf is at a 16 byte offset
+		from the top of the stack, and \texttt{leaq 8(\%rsp), \%rsi} indicates that \texttt{v}
+		is at an 8 byte offset from the top of the stack.
+		
+		\item Between the two versions, the location of \texttt{buf} and \texttt{r} relative
+		to the top of the stack was changed. In particular, \texttt{r} is closer to the top
+		of the stack in the version with the stack protector. This means that if \texttt{buf}
+		overflows, the value of \texttt{v} will not be overwritten. Moreover, \texttt{buf} is
+		followed by the canary value. If the canary value is overwritten due to a buffer overflow,
+		the changed value in the canary will be picked up by the compiler, which will flag it as
+		an error and abort.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.49}
+	In this problem, we will explore the logic behind the code in lines 5--11 on Figure 3.43(b),
+	where space is allocated for variable-size array \texttt{p}. As the annotations on the code
+	indicate, let $s_1$ denote the address of the stack pointer after executing the \texttt{subq}
+	instruction of line 4. This instruction allocates space for local variable \texttt{i}.
+	Let $s_2$ denote the value of the stack pointer after executing the \texttt{subq}
+	instruction on line 7. This instruction allocates the storage for local array \texttt{p}.
+	Finally, let $p$ denote the value assigned to registers \texttt{\%r8} and \texttt{\%rcx}
+	in the instructions of lines 10--11. Both of these registers are used to reference array
+	\texttt{p}.
+	
+	\
+	The right-hand side of Figure 3.44 diagrams the positions of the locations indicated
+	by $s_1$, $s_2$, and $p$. It also shows that there may be an offset of $e_2$ bytes between
+	the values of $s_1$ and $p$. This space will not be used. There may also be an offset of
+	$e_1$ bytes between the end of array \texttt{p} and the position indicated by $s_1$.
+	\begin{enumerate}[label=(\alph*)]
+		\item Explain, in mathematical terms, the logic in the computation of $s_2$ on lines
+		5--7. \emph{Hint}: Think about the bit-level representation of $-16$ and its effect
+		in the \texttt{andq} instruction of line 6.
+		\item Explain, in mathematical terms, the logic in the computation of $p$ on lines
+		8--10. \emph{Hint}: You may want to refer to the discussion on division by powers of 2
+		in Section 2.3.7.
+		\item For the following values of $n$ and $s_1$, trace the execution of the code
+		to determine what the resulting values would be for $s_2$, $p$, $e_1$, and $e_2$.
+		\begin{center}
+			\begin{tabular}{cccccc}
+				$n$ & $s_1$ & $s_2$ & $p$ & $e_1$ & $e_2$\\
+				\hline
+				5 & $2,065$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+				
+				6 & $2,064$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}& \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+			\end{tabular}
+		\end{center}
+		\item What alignment properties does this guarantee for the values of $s_2$ and
+		$p$?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The location $s_1$ is where the address of the stack pointer after allocating
+		space for $i$. The instruction on line $5$ \texttt{leaq 22(,\%rdi, 8), \%rax} uses
+		the value \texttt{n} is in register \texttt{\%rdi} to store the value $x=22+8n$
+		in register \texttt{\%rax}. The instruction \texttt{andq \$-16, \%rax} on
+		line 6 then computes the $x$ AND $-16$. Note that $-16=-1\cdot 16$, which
+		is equivalent to \texttt{-1 << 4}. Since $-1$ has all 1s in its binary representation,
+		it follows from the left shift operation that $-16$ has all 1s except for
+		4 zeroes in its least significant bits. Therefore, the effect when involved
+		in the AND operation is to remote the least significant byte. Put another way,
+		suppose $r=x\mod 16$. Then the instruction on line $16$ subtracts the remainder $r$
+		from $x$ and places it in \texttt{\%rax}. Now \texttt{\%rax} has value $y=x-r$ in
+		its register. Note that
+		\begin{align*}
+			r&=x\mod 16\\
+			&=(22+8n)\mod 16\\
+			&=(6+8n)\mod 16
+		\end{align*}
+		If $n$ is even, then $n=2k$, and in that case we get
+		\begin{align*}
+			r=(6+8n)\mod 16=(6+16k)\mod 16=6
+		\end{align*}
+		If $n$ is odd, then $n=2k+1$ for some $k$, and we have
+		\begin{align*}
+			r=(6+16k+8)\mod 16=(14+16k)\mod 16=14
+		\end{align*}
+		Therefore, $r$ is $6$ or $14$. Since $x=22+8n$, this means that
+		\begin{align*}
+			y=\begin{cases}
+				16 + 8n & \text{if $n$ is even}\\
+				8 + 8n & \text{if $n$ is odd}
+			\end{cases}
+		\end{align*}
+		Now, the instruction \texttt{subq \%rax, \%rsp} on
+		line 7 subtracts $y=x$ from $s_1$, since $s_1$ is the current value on the stack,
+		to compute $s_2$. Hence, the new value on top of the stack is
+		\begin{align*}
+			s_2=\begin{cases}
+				s_1-(16+8n) & \text{if $n$ is even}\\
+				s_1-(8+8n)& \text{if $n$ is odd}
+			\end{cases}
+		\end{align*}
+		\item The instruction \texttt{leaq 7(\%rsp), \%rax} on line 8 and the instruction
+		\texttt{shrq \$3, \%rax} takes the value $s_2$ in register \texttt{\%rax} and
+		replaces it with $(s_2 + 7) >> 3 = (s_2 + (1 << 3) - 1) >> 3$, which is the computation
+		for dividing a two's complement number by $2^3=8$. This computes $s_2/8$ and rounds up.
+		The instruction \texttt{leaq 0(,\%rax,8), \%r8} on line 10 multiplies this value by 8.
+		Now \texttt{\%r8} has value
+		\begin{align*}
+			p=\begin{cases}
+				8\lceil s_1/8\rceil - (16+8n) & \text{if $n$ is even}\\
+				8\lceil s_1/8\rceil - (8+8n) & \text{if $n$ is odd}
+			\end{cases}
+		\end{align*}		
+		The result is that the address in $p$ is now a multiple of $8$, ensuring its aligned
+		on 8 bytes, as required by its elements of type \texttt{long *}.
+		Moreover, it is greater than $s_2$, so it is above $s_2$. In short, it is the address
+		closes to $s_2$ that is a multiple of $8$.
+		\item 
+		\begin{center}
+			\begin{tabular}{cccccc}
+				$n$ & $s_1$ & $s_2$ & $p$ & $e_1$ & $e_2$\\
+				\hline
+				$5$ & $2,065$ & $2017$ &$2024$ & $1$ & $7$\\
+				
+				$6$ & $2,064$ & $2000$ & $2000$ & $16$ & $0$
+			\end{tabular}
+		\end{center}
+		\item $p$ is aligned on 8 bytes with respect to \texttt{\%rbp} consistent
+		with the fact that \texttt{long *} requires 8 byte alignment. Also,
+		$s_2$ is aligned on 16 bytes with respect to \texttt{$s_1$}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.50}
+	For the following C code, the expressions \texttt{val1}--\texttt{val4} all map to the
+	program values \texttt{i}, \texttt{f}, \texttt{d}, and \texttt{l}:
+	\begin{lstlisting}
+double fvct2(int *ip, float *fp, double *dp, long l)
+{
+	int i = *ip; float f = *fp; double d = *dp;
+	*ip = (int)		val1;
+	*fp = (float)	val2;
+	*dp = (double)	val3;
+	return (double)	val4;
+}
+	\end{lstlisting}
+	Determine the mapping, based on the following x86-64 code for the function:
+	\begin{lstlisting}[language={}]
+	double fvct2(int *ip, float *fp, double *dp, long l)
+	ip in %rdi, fp in %rsi, dp in %rdx, l in %rcx
+	Result returned in %xmm0
+fcvt2:
+	movl		(%rdi),		%eax
+	vmovss		(%rsi),		%xmm0
+	vcvttsd2si	(%rdx),		%r8d
+	movl		%r8d,		(%rdi)
+	vcvtsi2ss	%eax,		%xmm1,	%xmm1
+	vmovss		%xmm1,		(%rsi)
+	vcvtsi2sdq	%rcx,		%xmm1,	%xmm1
+	vmovsd		%xmm1,		(%rdx)
+	vunpcklps	%xmm0,		%xmm0,	%xmm0
+	vcvtps2pd	%xmm0,		%xmm0
+	ret
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	We begin by annotating the assembly:
+	\begin{lstlisting}[language={}]
+	double fvct2(int *ip, float *fp, double *dp, long l)
+	ip in %rdi, fp in %rsi, dp in %rdx, l in %rcx
+	Result returned in %xmm0
+fcvt2:
+	movl		(%rdi),		%eax			// int i = *ip
+	vmovss		(%rsi),		%xmm0			// float f = *fp;
+	vcvttsd2si	(%rdx),		%r8d			// Convert *dp to an integer
+	movl		%r8d,		(%rdi)			// *ip = (int) d;
+	vcvtsi2ss	%eax,		%xmm1,	%xmm1	// Convert i to single-precision float
+	vmovss		%xmm1,		(%rsi)			// *fp = (float) i;
+	vcvtsi2sdq	%rcx,		%xmm1,	%xmm1	// Convert l to double-precision float
+	vmovsd		%xmm1,		(%rdx)			// *dp = (float) l;
+	vunpcklps	%xmm0,		%xmm0,	%xmm0	// 
+	vcvtps2pd	%xmm0,		%xmm0			// Extend *fp to a double
+	ret										// return (double) f;
+	\end{lstlisting}
+	
+	The C code now looks like:
+		\begin{lstlisting}
+double fvct2(int *ip, float *fp, double *dp, long l)
+{
+	int i = *ip; float f = *fp; double d = *dp;
+	*ip = (int)		d;
+	*fp = (float)	i;
+	*dp = (double)	l;
+	return (double)	f;
+}
+		\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.51}
+	The following C function converts an argument of type \texttt{src\_t} to a return value
+	of type \texttt{dst\_t}, where these two types are defined using \texttt{typedef}:
+	\begin{lstlisting}
+dest_t cvt(src_t x)
+{
+	dest_t y = (dest_t) x;
+	return y;
+}
+	\end{lstlisting}
+	For an extension on x86-64, assume that argument \texttt{x} is either in \texttt{\%xmm0}
+	or in the appropriately named portion of register \texttt{\%rdi} (i.e., \texttt{\%rdi} or
+	\texttt{\%edi}). One or two instructions are to be used to perform the type conversion and
+	to copy the value to the appropriately named portion of register \texttt{\%rax} (integer
+	result) or \texttt{\%mm0} (floating-point result). Show the instruction(s), including the
+	source and destination registers.
+	\begin{center}
+		\begin{tabular}{ccc}
+			$T_{\texttt{x}}$ & $T_{\texttt{y}}$ & Instruction(s)\\
+			\hline
+			\texttt{long} & \texttt{double} & \texttt{vcvtsi2sdq \%rdi, \%mm0}\\
+			\texttt{double} & \texttt{int} & \makebox[3cm]{\hrulefill}\\
+			\texttt{double} & \texttt{float} & \makebox[3cm]{\hrulefill}\\
+			\texttt{long} & \texttt{float} & \makebox[3cm]{\hrulefill}\\
+			\texttt{float} & \texttt{long} & \makebox[3cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccc}
+			$T_{\texttt{x}}$ & $T_{\texttt{y}}$ & Instruction(s)\\
+			\hline
+			\texttt{long} & \texttt{double} & \texttt{vcvtsi2sdq \%rdi, \%xmm0, \%xmm0} \\
+			\texttt{double} & \texttt{int} & \texttt{vcvttsd2si \%xmm0, \%eax} \\
+			\texttt{double} & \texttt{float} & \texttt{vcvtsd2ss \%xmm0, \%xmm0, \%xmm0} \\
+			\texttt{long} & \texttt{float} & \texttt{vcvtsi2sdq \%rdi, \%xmm0, \%xmm0} \\
+			\texttt{float} & \texttt{long} & \texttt{vcvttss2siq \%xmm0, \%rax}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{3.52}
+	For each of the following function declarations, determine the register assignments for
+	the arguments:
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{double g1(double a, long b, float c, int d);}
+		\item \texttt{double g2(int a, double *b, float *c, long d);}
+		\item \texttt{double g3(double *a, double b, int c, float d);}
+		\item \texttt{double g4(float a, int *b, float c, double d);}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{a} in \texttt{\%xmm0}, \texttt{b} in \texttt{\%rdi}, \texttt{c} in
+		\texttt{\%xmm1}, and \texttt{d} in \texttt{\%esi}.
+		\item \texttt{a} in \texttt{\%edi}, \texttt{b} in \texttt{\%xmm0}, \texttt{c} in
+		\texttt{\%rsi}, and \texttt{d} in \texttt{\%rdx}.
+		\item \texttt{a} in \texttt{\%rdi}, \texttt{b} in \texttt{\%xmm0}, \texttt{c} in
+		\texttt{\%esi}, and \texttt{d} in \texttt{\%xmm1}.
+		\item \texttt{a} in \texttt{\%xmm0}, \texttt{b} in \texttt{\%rdi}, \texttt{c} in
+		\texttt{\%xmm1}, and \texttt{d} in \texttt{\%xmm2}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.53}
+	For the following C function, the types of the four arguments are defined by \texttt{typdef}:
+	\begin{lstlisting}
+double funct1(arg1_t p, arg2_t q, arg3_t r, arg4_t s)
+{
+	return p/(q+r) - s;
+}
+	\end{lstlisting}
+	When compiled, \texttt{gcc} generates the following code:
+	\begin{lstlisting}[language={}]
+	double funct1(arg1_t p, arg2_t q, arg3_t r, arg4_t s)
+funct1:
+	vcvtsi2ssq		%rsi,	%xmm2,	%xmm2
+	vaddss			%xmm0,	%xmm2,	%xmm0
+	vcvtsi2ss		%edi,	%xmm2,	%xmm2
+	vdivss			%xmm0,	%xmm2,	%xmm0
+	vunpcklps		%xmm0,	%xmm0,	%xmm0
+	vcvtps2pd		%xmm0,	%xmm0
+	vsubsd			%xmm1,	%xmm0,	%xmm0
+	ret
+	\end{lstlisting}
+	Determine the possible combinations of types of the four arguments (there may be
+	more than one).
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated assembly is:
+	\begin{lstlisting}[language={}]
+	double funct1(arg1_t p, arg2_t q, arg3_t r, arg4_t s)
+funct1:
+	vcvtsi2ssq		%rsi,	%xmm2,	%xmm2	// Convert long to float
+	vaddss			%xmm0,	%xmm2,	%xmm0	// Add two floats
+	vcvtsi2ss		%edi,	%xmm2,	%xmm2	// Convert int to float
+	vdivss			%xmm0,	%xmm2,	%xmm0	// Divide two floats
+	// The next two instructions convert float to double
+	vunpcklps		%xmm0,	%xmm0,	%xmm0
+	vcvtps2pd		%xmm0,	%xmm0
+	
+	vsubsd			%xmm1,	%xmm0,	%xmm0	// Subtract two doubles
+	ret
+	\end{lstlisting}
+	From the last instruction, we infer that \texttt{s} is in the \texttt{\%xmm1}
+	register, since it is subtracted from the value computed so far in \texttt{\%xmm0}.
+	Since it has undergone no conversions so far, we conclude that \texttt{arg4\_t}
+	is \texttt{double}.
+	
+	From the \texttt{vdivss} instruction we see that \texttt{\%xmm2} must hold the
+	numerator \texttt{p} of the division. The instruction right before is one
+	that converts an integer stored in \texttt{\%edi} to a \texttt{float}. Therefore,
+	we conclude that \texttt{p} must be a 32-bit integer (an \texttt{int}).
+	
+	\
+	Based on the remaining annotations, the two remaining arguments are of type
+	\texttt{long} and \texttt{float}, because they involve the \texttt{\%xmm0} register
+	and the \texttt{\%rsi} register.
+	Therefore, \texttt{arg2\_t} is a  \texttt{float} and \texttt{arg3\_t} is a \texttt{long},
+	or viceversa.
+\end{sol}
+
+\begin{ex}{3.54}
+	Function \texttt{funct2} has the following prototype:
+	\begin{lstlisting}
+double funct2(double w, int x, float y, long z);
+	\end{lstlisting}
+	\texttt{gcc} generates the following for the function:
+	\begin{lstlisting}[language={}]
+	double funct2(double w, int x, float y, long z);
+	w in %xmm0, x in %edi, y in %xmm1, z in %rsi
+funct2:
+	vcvtsi2ss		%edi,	%xmm2,	%xmm2
+	vmulss			%xmm1,	%xmm2,	%xmm1
+	vunpcklpls		%xmm1,	%xmm1,	%xmm1
+	vcvtps2pd		%xmm1,	%xmm2
+	vcvtsi2sdq		%rsi,	%xmm1,	%xmm1
+	vdivsd			%xmm1,	%xmm0,	%xmm0
+	vsubsd			%xmm0,	%xmm2,	%xmm0
+	ret
+	\end{lstlisting}
+	Write a C version of \texttt{funct2}.
+\end{ex}
+
+\begin{sol}
+	\
+	I have annotated the assembly below:
+	\begin{lstlisting}[language={}]
+	double funct2(double w, int x, float y, long z);
+	w in %xmm0, x in %edi, y in %xmm1, z in %rsi
+funct2:
+	vcvtsi2ss		%edi,	%xmm2,	%xmm2	// Convert integer to float: (float) x
+	vmulss			%xmm1,	%xmm2,	%xmm1	// y *= (float) x 
+	// Convert y from float to double
+	vunpcklpls		%xmm1,	%xmm1,	%xmm1
+	vcvtps2pd		%xmm1,	%xmm2			// double s = y
+	
+	vcvtsi2sdq		%rsi,	%xmm1,	%xmm1	// double r = z  (long -> double)
+	vdivsd			%xmm1,	%xmm0,	%xmm0	// w /= r;
+	vsubsd			%xmm0,	%xmm2,	%xmm0	// return s - r;
+	ret
+	\end{lstlisting}
+	The corresponding C code is below:
+	\begin{lstlisting}
+double funct2(double w, int x, float y, long z)
+{
+	double s = y * (float) x; // Convert y to float
+	double r = w / z;
+	return s - r;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.55}
+	Show how the numbers declared at label \texttt{.LC3} encode the number \texttt{32.0}.
+\end{ex}
+
+\begin{sol}
+	\
+	At \texttt{.L3} we have:
+	\begin{lstlisting}[language={}]
+.LC3:
+	.long	0				// Low-order 4 bytes of 32.0
+	.long	1077936128		// High-order 4 bytes of 32.0
+	\end{lstlisting}
+	Converting \texttt{1077936128} by dividing by 16 yields:
+	\begin{align*}
+		1077936128&=16\cdot 67371008 + 0\\
+		67371008&=16\cdot 4210688 + 0\\
+		4,210,688 &= 16\cdot 263168 + 0\\
+		263,168 &= 16 \cdot 16488 + 0\\
+		16488&=16\cdot 1028 + 0\\
+		1024&=16\cdot 64 + 4\\
+		64 &= 16\cdot 4 + 0\\
+		4 &= 16\cdot 0 + 4
+	\end{align*}
+	The corresponding number in hex is \texttt{0x40400000}. The \texttt{0x404}
+	is equivalent to binary \texttt{0100 0000 0100}. The leading bit is the sign
+	bit, and 0 indicates a positive number, which is true for \texttt{32.0}.
+	The remaining 11 bits yield the number \texttt{1028}. Subtracting the bias
+	\texttt{1023} yields an exponent of \texttt{5}. Since the exponent is nonzero,
+	the number is a normalized floating point, so the significand is $M=1+f$,
+	where $f$ is the fractional part. Since the rest of the bits in the
+	binary sequence are 0, this means that $f=0$ and $M=1$. The value is
+	therefore $V=2^E\cdot M=2^5\cdot 1=32$.
+\end{sol}
+
+\begin{ex}{3.56}
+	Consider the following C function, where \texttt{EXPR} is a macro defined with a
+	\texttt{\#define}:
+	\begin{lstlisting}
+double simplefun(double x) {
+	return EXPR(x);
+}
+	\end{lstlisting}
+	Below, we show the AVX2 code generated for different definitions of \texttt{EXPR},
+	where value \texttt{x} is held in \texttt{\%xmm0}. All of them correspond to some
+	useful operation on floating-point values. Identify what the operations are. Your
+	answers will require you to understand the bit patterns of the constant words
+	being retrieved from memory.
+	\begin{enumerate}[label=(\alph*)]
+		\item
+		\
+		\begin{lstlisting}[language={}]
+	vmovsd	.LC1(%rip),		%xmm1
+	vandpd	%xmm1,			%xmm0	%xmm0
+.LC1:
+	.long	4294967295
+	.long	2147483647
+	.long	0
+	.long	0
+		\end{lstlisting}
+		\item 
+		\
+		\begin{lstlisting}[language={}]
+	vxorpd	%xmm0,	%xmm0,	%xmm0
+		\end{lstlisting}
+		\item
+		\
+		\begin{lstlisting}[language={}]
+	vmovsd	.LC2(%rip),		%xmm1
+	vxorpd	%xmm1,			%xmm0,	%xmm0
+.LC2:
+	.long	0
+	.long	-2147483648
+	.long	0
+	.long	0
+		\end{lstlisting}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The \texttt{4294967295} is $2^{32}-1$, and corresponds to hex value \texttt{ff ff ff ff}.
+		Meanwhile \texttt{2147483647} is $2^{31}-1$, and corresponds to hex value \texttt{7f ff ff ff}.
+		The latter is the higher-order 4 bytes of a double precision number.
+		The three leading bytes \texttt{0x7ff} correspond to binary \texttt{0111 1111 1111}.
+		The sign bit is 0, and the remaining bits are 1. Since the lower ordered bytes (for the
+		fractional part) are not 0, this number must be \texttt{NaN}. Noting the
+		\texttt{vandpd} instruction, we must have \texttt{NaN \& x}. The value of the expression
+		is a bit pattern that is the same as \texttt{x}, except that the most significant bit
+		is 0. Therefore it returns the absolute value of \texttt{x}.
+		\item This computes \texttt{x \^{} x}, which gives 0.
+		\item The number \texttt{-2147483648} has hex representation \texttt{80 00 00 00}.
+		Hence, the binary representation of the leading three bytes \texttt{0x800} is
+		\texttt{1000 0000 0000}. This has a sign bit of 1, and all exponent bits are 0.
+		The rest of the bits in the pattern are also 0. Since the operation is for \texttt{vxorpd},
+		which computes exclusive or, this has the effect of flipping the leading bit (
+		since \texttt{1\^{} 1} is 0 and \texttt{1\^{} 0} i s 1), and retaining the rest of the bits.
+		This calculation negates \texttt{x}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.57}
+	Function \texttt{funct3} has the following prototype:
+	\begin{lstlisting}
+double funct2(int *ap, double b, long c, float *dp);
+	\end{lstlisting}
+	For this function, \texttt{gcc} generates the following code:
+	\begin{lstlisting}
+	double funct3(int *ap, double b, long c, float *dp)
+	ap in %rdi, b in %xmm0, c in %rsi, dp in %rdx
+funct3:
+	vmovss		(%rdx),		%xmm1
+	vcvtsi2sd	(%rdi),		%xmm2,	%xmm2
+	vucomisd	%xmm2,		%xmm0
+	jbe			.L8
+	vcvtsi2ssq	%rsi,		%xmm0,	%xmm0
+	vmulss		%xmm1,		%xmm0,	%xmm1
+	vunpcklps	%xmm1,		%xmm1,	%xmm1
+	vcvtps2pd	%xmm1,		%xmm0
+	ret
+.L8:
+	vaddss		%xmm1,		%xmm1,	%xmm1
+	vcvtsi2ssq	%rsi,		%xmm0,	%xmm0
+	vaddss		%xmm1,		%xmm0,	%xmm0
+	vunpcklps	%xmm0,		%xmm0,	%xmm0
+	vcvtps2pd	%xmm0,		%xmm0
+	ret
+	\end{lstlisting}
+	Write a C version of \texttt{funct3}.
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated version of the assembly is:
+		\begin{lstlisting}
+	double funct3(int *ap, double b, long c, float *dp)
+	ap in %rdi, b in %xmm0, c in %rsi, dp in %rdx
+funct3:
+	vmovss		(%rdx),		%xmm1			// float d = *dp;
+	vcvtsi2sd	(%rdi),		%xmm2,	%xmm2	// double v = *ap;
+	vucomisd	%xmm2,		%xmm0			// Compare b:v
+	jbe			.L8							// if <=  go to .L8
+	vcvtsi2ssq	%rsi,		%xmm0,	%xmm0	// float r = c;
+	vmulss		%xmm1,		%xmm0,	%xmm1	// d *= r;
+	vunpcklps	%xmm1,		%xmm1,	%xmm1	
+	vcvtps2pd	%xmm1,		%xmm0
+	ret										// return d;
+.L8:
+	vaddss		%xmm1,		%xmm1,	%xmm1	// d += d; // double d
+	vcvtsi2ssq	%rsi,		%xmm0,	%xmm0	// float z = c;
+	vaddss		%xmm1,		%xmm0,	%xmm0	// z += d;
+	vunpcklps	%xmm0,		%xmm0,	%xmm0	
+	vcvtps2pd	%xmm0,		%xmm0
+	ret										// return z;
+		\end{lstlisting}
+		The corresponding C code is below:
+		\begin{lstlisting}
+double funct3(int *ap, double b, long c, float *dp)
+{
+	float d = *dp;
+	double v = *ap;
+	if (b > v) {
+		return c * d
+	} else {
+		return 2 * d + c;
+	}
+}
+		\end{lstlisting}
+\end{sol}
 
 \end{document}
