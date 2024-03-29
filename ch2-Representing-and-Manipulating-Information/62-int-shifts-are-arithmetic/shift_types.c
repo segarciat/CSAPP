@@ -1,12 +1,12 @@
 #include <stdio.h>
+
+/* Returns 1 if right shifts are arithmetic on this machine, 0 otherwise */
 int shift_types_are_arithmetic()
 {
-	int width = 8 * sizeof(int);
-	int msbit = -1 >> width;
-	return msbit || 0;
+	return -1 == (-1 >> 1);
 }
 
 int main(int arc, char *argv[])
 {
-	printf("%d\n", shift_types_are_arithmetic());
+	printf("Right shifts on int are %s\n", shift_types_are_arithmetic() ? "arithmetic" : "logical");
 }

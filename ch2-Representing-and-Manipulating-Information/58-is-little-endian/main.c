@@ -3,5 +3,5 @@
 
 int main(int argc, char *argv[])
 {
-	printf("%d\n", is_little_endian());
+	printf("Compiled and run on %s endian\n", is_little_endian() ? "little" : "big");
 }

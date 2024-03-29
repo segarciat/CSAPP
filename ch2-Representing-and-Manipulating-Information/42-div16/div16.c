@@ -1,8 +1,10 @@
 #include "div16.h"
 
+#define N 4
+
+/* Returns x divided by 2^4 */
 int div16(int x) {
-    // bias to ensure rounding up towards 0; note 16=2^4.
-    static unsigned POW = 4;
-    int bias = (0x10000000 & x) && 1; // bias by 0 (meaning not at all) if number is positive.
-    return  (x + (bias << POW) - bias) >> POW;
+	/* bias if x is negative (to round up to 0) or not otherwise round down to 0 */
+    int bias = (0x10000000 & x) && 1;
+    return  (x + (bias << N) - bias) >> N;
 }

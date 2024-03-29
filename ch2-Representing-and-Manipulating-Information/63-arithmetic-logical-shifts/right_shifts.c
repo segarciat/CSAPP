@@ -1,6 +1,8 @@
 #define INT_WIDTH (8 * sizeof(int))
 
 /* 0 <= k < INT_WIDTH */
+
+/* Shifts x right by k logically */
 unsigned srl(unsigned x, int k) {
 	/* Perform shift arithmetically */
 	unsigned xsra = (int) x >> k;
@@ -9,21 +11,23 @@ unsigned srl(unsigned x, int k) {
 
 	/* All but first last k bits are 1 */
 	int bitmask = ~((-1) << desiredBits);
+
 	return xsra & bitmask;
 }
 
+/* Shift x right by k arithmetically */
 int sra(int x, int k) {
 	/* Perform shift logically */
 	int xsrl = (unsigned) x >> k;
 
-	/* msb is 1 or 0 */
-	int msb = (x & (1 << (INT_WIDTH - 1))) || 0;
+	/* xmsbit is 1 or 0 */
+	int xmsbit = (x & (1 << (INT_WIDTH - 1))) || 0;
 
-	/* all 1s or all 0s */
-	int allMsbs = ~(msb - 1);
+	/* -1 if x is positive, 0 otherwise */
+	int copiedxmsbit = ~(xmsbit - 1);
 
-	/* All but first last k bits are 1 */
-	int bitmask = allMsbs << (INT_WIDTH - k);
+	/* Most significant k bits equal x's msbit, rest are 0 */
+	int bitmask = copiedxmsbit << (INT_WIDTH - k);
 
 	return xsrl | bitmask;
 }
