@@ -14,6 +14,7 @@ int lsbyte1bit(int x) {
 /* Returns 1 if any 0 bit in most significant byte exists, 0 otherwise */
 int msbyte0bit(int x) {
 	// if x msbyte is only 1s, arithmetic right shifts fills with 1s.
-	return (x >> (8*sizeof(int)-1)) != -1;
-	// return ((x >> (8*sizeof(int)-1)) & 0xFF) != 0xFF // alternative when >> is logical
+	// return (x >> (8*sizeof(int)-1)) != -1;
+	int shiftval = (sizeof(int) - 1) << 3;
+	return ((x >> shiftval) & 0xFF) != 0xFF // alternative when >> is logical
 }
