@@ -1191,8 +1191,7 @@ int strlonger(char *s, char *t) {
 		\texttt{s} is shorter than \texttt{t}.
 		\item The error occurs because when an expression contains unsigned operands,
 		C will implicitly cast signed operands to unsigned. In this case, the result of \texttt{strlen(s) - strlen(t)} is cast to an unsigned number. Therefore, if the result is negative, it is
-		cast to a positive number. If the result is negative, it is then cast to a positive
-		number.
+		cast to a positive number. 
 		\item We can fix the problem by replacing the expression after the \texttt{return} statement
 		with \texttt{return strlen(s) > strlen(t)}.
 	\end{enumerate}
@@ -1581,18 +1580,18 @@ int tmult_ok(int x, int y) {
 
 \begin{sol}
 	\
-	We declare a variable \texttt{p} of type \texttt{uint64\_t} to hold
+	We declare a variable \texttt{p} of type \texttt{int64\_t} to hold
 	the result of the product. However, that is not enough; if we compute
 	the product of the two 32-bit int values, a 32-bit two's-complement
 	multiplication takes place, and the result is simply sign-extended
 	into the result variable. Instead, we need to ensure multiplication
 	occurs as a 64-bit multiplication. To achieve this, we cast the operands
-	to \texttt{uint64\_t}. It's enough to cast one operand, e.g., \texttt{x},
-	since $C$ will implicitly promote the other to be of the larger
-	width. Now, overflows does not occur 32 most significant bits are all
-	0. If we compare the product \texttt{p} to its 32-bit truncated
-	version, we can conclude that no truncation happens if their
-	values are the same. 
+	to \texttt{int64\_t}. It's enough to cast one operand, e.g., \texttt{x},
+	since C will implicitly promote the other to be of the larger
+	width. The product fits in this larger width. Now, if overflow happens,
+	then there exists some bit position between 32 and 63 (upper 4 bytes) with a 1 bit. 
+	If no such bit exists, then no overflow happens; in this case, \texttt{p} is
+	equal to \texttt{(int) p}, the result of truncating \texttt{p}.
 	
 	\
 	See code listing for \texttt{./36-signed-multiplication-overflow/tmultof.c}:
