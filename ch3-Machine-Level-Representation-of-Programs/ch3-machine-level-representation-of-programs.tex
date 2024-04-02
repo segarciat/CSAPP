@@ -3760,4 +3760,1145 @@ double funct3(int *ap, double b, long c, float *dp)
 		\end{lstlisting}
 \end{sol}
 
+\begin{ex}{3.58}
+	For a function with prototype
+	\begin{lstlisting}
+long decode2(long x, long y, long z);
+	\end{lstlisting}
+	\texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+decode2:
+	subq	%rdx,	%rsi
+	imulq	%rsi,	%rdi
+	movq	%rsi,	%rax
+	salq	$63,	%rax
+	sarq	$63,	%rax
+	xorq	%rdi,	%rax
+	ret
+	\end{lstlisting}
+	Parameters \texttt{x}, \texttt{y}, and \texttt{z} are
+	passed in registers \texttt{\%rdi}, \texttt{\%rsi}, and
+	\texttt{\%rdx}. The code stores the return value in register
+	\texttt{\%rax}. Write C code for \texttt{decode2} that will
+	have an effect equivalent to the assembly code shown.
+\end{ex}
+
+\begin{sol}
+	\
+	We can begin by annotating the assembly:
+	\begin{lstlisting}[language={}]
+decode2:
+	subq	%rdx,	%rsi	// y = y - z;
+	imulq	%rsi,	%rdi	// x = x * y;
+	movq	%rsi,	%rax	// long result = y;
+	salq	$63,	%rax	// result = result << 63;
+	sarq	$63,	%rax	// result = result >> 63;
+	xorq	%rdi,	%rax	// result = result ^ x;
+	ret						// return result;
+	\end{lstlisting}
+	The corresponding C code is below:
+	\begin{lstlisting}
+long decode2(long x, long y, long z) {
+	y = y - z;
+	x = x * y;
+	long result = y;
+	result = result << 63;
+	result = result >> 63;
+	return result ^ x;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.59}
+	The following code computes the 128-bit product of two 64-bit
+	signed values $x$ and $y$ and stored the result in memory:
+	\begin{lstlisting}
+typedef __int128 int128_t;
+
+void store_prod(int128_t *dest, int64_t x, int64_t y) {
+	*dest = x * (int128_t) y;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following assembly implementing the
+	computation:
+	\begin{lstlisting}[language={}]
+store_prod:
+	movq	%rdx,	%rax
+	cqto
+	movq	%rsi,	%rcx
+	sarq	$63,	%rcx
+	imulq	%rax,	%rcx
+	imulq	%rsi,	%rdx
+	addq	%rdx,	%rcx
+	mulq	%rsi
+	addq	%rcx,	%rdx
+	movq	%rax,	(%rdi)
+	movq	%rdx,	8(%rdi)
+	ret
+	\end{lstlisting}
+	This code uses three multiplications for the multiprecision arithmetic
+	required to implement 128-bit arithmetic on a 64-bit machine. Describe
+	the algorithm used to compute the product, and annotate the assembly
+	code to show how it realizes your algorithm. \emph{Hint}: When
+	extending arguments of $x$ and $y$ to 128 bits, they can be written
+	as $x=2^{64}\cdot x_h+x_l$ and $y=2^{64}\cdot y_h + y_l$, where
+	$x_h$, $x_l$, $y_h$, and $y_l$ are 64-bit values. Similarly, the
+	128-bit product can be written as $p=2^{64}\cdot p_h+p_l$, where
+	$p_h$ and $p_l$ are 64-bit values. Show how the code computes the
+	values of $p_h$ and $p_l$ in terms of $x_h$, $x_l$, $y_h$, and $y_l$.
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated assembly is below:
+\begin{lstlisting}[language={}]
+	void store_prod(int128_t *dest, int64_t x, int64_t y)
+	dest in %rdi, x in %rsi, y in %rdx
+store_prod:
+	movq	%rdx,	%rax	// Copy y to %rax
+	cqto					// Copy sign bits of %rax into %rdx to extend to 128
+	movq	%rsi,	%rcx	// int64_t t = x;
+	sarq	$63,	%rcx	// t = x >> 63; // shift right arithmetically
+	imulq	%rax,	%rcx	// t = t * value in %rax; // sign of x times y
+	imulq	%rsi,	%rdx	// y = y * x; // lower product of x and y
+	addq	%rdx,	%rcx	// t = t + y; // 
+	mulq	%rsi			// x * result; // store product in R[%rdx]:R[%rax]
+	addq	%rcx,	%rdx	// y = y + t;
+	movq	%rax,	(%rdi)	// Store least bits of product in result
+	movq	%rdx,	8(%rdi)	// Store most significand bits of product in result
+	ret						// return
+\end{lstlisting}
+	The algorithm simply uses the distributive property to compute the following:
+	\begin{align*}
+		x\cdot y&=(2^{64}x_h+x_l)(2^{64}y_h+y_l)\\
+		&=2^{128}x_hy_h+2^{64}(x_hy_l+y_hx_l)+x_ly_l
+	\end{align*}
+	Here, $x_h$ and $y_h$ are each repeats of the sign bit $x_{63}$ and $y_{63}$,
+	respectively. Note that $2^{128}x_hy_h$ is dropped since the product must be in
+	two 64-bit registers. Moreover, since the operands $x$ and $y$ are 64-bit, the product
+	truncating does not affect the value of the product. Put another way, the
+	product $p$ is $p=(x\cdot y)\mod 128$.
+	
+	\
+	Consider the algorithm described by the assembly.
+	It begins by placing $y_l$ in \texttt{\%rax}, then sign extends it with
+	the \texttt{cqto} command, replicating $y_{63}$ (the sign bit of $y$) across
+	all of \texttt{\%rdx}, so its 64 bit make up $y_h$. Then, it computes the sign of
+	\texttt{x} by using an arithmetic right shift by 63 bits, the value that would
+	go in the higher 64 bit of \texttt{x} when it is sign-extended to 128 bits; we'll
+	call it $\text{sgn}(x)$ or equivalently $x_h$. Then the algorithm places the product
+	$y_l\cdot x_h$ in \texttt{\%rcx}. Similarly, it places the product $y_h\cdot x_l$ in
+	\texttt{\%rdx}. Their sum is placed in \texttt{\%rcx}. It then computes $x_l\cdot y_l$
+	and places the lower part of the result in \texttt{\%rax}, and the upper part of the
+	result in \texttt{\%rdx}. Finally, the we add to the upper product the value stored
+	in \texttt{\%rdx} the value $y_lx_h+y_hx_l$ currently in \texttt{\%rcx}. The last
+	two \texttt{movq} instructions place the product in the memory location pointed to
+	by \texttt{dest}
+\end{sol}
+
+\begin{ex}{3.60}
+	Consider the following assembly code:
+	\begin{lstlisting}[language={}]
+	long loop(long x, int n)
+	x in %rdi, n in %esi
+loop:
+	movl	%esi,	%ecx
+	movl	$1,		%edx
+	movl	$0,		%eax
+	jmp		.L2
+.L3:
+	movq	%rdi,	%r8
+	andq	%rdx,	%r8
+	orq		%r8,	%rax
+	salq	%cl,	%rdx
+.L2:
+	testq	%rdx,	%rdx
+	jne		.L3
+	rep; ret
+	\end{lstlisting}
+	The preceding code was generated by compiling C code that had the following overall form:
+	\begin{lstlisting}
+long loop(long x, long n)
+{
+	long result = _________;
+	long mask;
+	for (mask = ________; mask _________ ; mask = _______ ) {
+		result |= ________;
+	}
+	return result;
+}
+	\end{lstlisting}
+	Your task is to fill in the missing parts of the C code to get a program equivalent to the
+	generated assembly code. Recall that the result of the function is returned in the register
+	\texttt{\%rax}.  You will find it helpful to examine the assembly code before, during and
+	after the loop to form a consistent mapping between the registers and the program variables.
+	\begin{enumerate}[label=(\alph*)]
+		\item Which registers hold program values \texttt{x}, \texttt{n}, \texttt{result}, and
+		\texttt{mask}?
+		\item What are the initial values of \texttt{result} and \texttt{mask}?
+		\item What is the test condition for \texttt{mask}?
+		\item How does \texttt{mask} get updated?
+		\item How does \texttt{result} get updated?
+		\item Fill in the missing parts of the C code.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated assembly is below:
+	\begin{lstlisting}[language={}]
+	long loop(long x, int n)
+	x in %rdi, n in %esi
+loop:
+	movl	%esi,	%ecx	// long k = n;
+	movl	$1,		%edx	// long mask = 1;
+	movl	$0,		%eax	// long result = 0;
+	jmp		.L2
+.L3:
+	movq	%rdi,	%r8		// long q = x
+	andq	%rdx,	%r8		// q = x & mask;
+	orq		%r8,	%rax	// result = result | q
+	salq	%cl,	%rdx	// mask = mask << k // this is n with 0s in upper 32 bits
+.L2:
+	testq	%rdx,	%rdx	// test j
+	jne		.L3				// if != 0 go to .L3
+	rep; ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{x} is in the 64-bit register \texttt{\%rdi}, \texttt{n} is in the
+		32-bit register \texttt{\%esi}, \texttt{result} is in the 64-bit register
+		\texttt{\%rax}, and \texttt{mask} is in the 64-bit register \texttt{\%rdx}.
+		\item \texttt{result} is initially 0, as given by the instruction \texttt{movl \$0, \%eax}.
+		Then \texttt{mask} is initially \texttt{1}, as given by \texttt{movl \$1, \%edx}, which
+		places 1 in the lower 32 bit portion of \texttt{\%rdx} and places 0s in the upper 32
+		bit portion.
+		\item The test condition is \texttt{mask != 0}.
+		\item The mask is updated through a logical left shift with instruction \texttt{salq \$cl, \%rdx}.
+		Specifically, it's \texttt{mask = mask << n}.
+		\item It's \texttt{result = result | (x \& mask)}.
+		\item The C code is below:
+		\begin{lstlisting}
+long loop(long x, long n)
+{
+	long result = 0;
+	long mask;
+	for (mask = 1; mask != 0 ; mask = mask << n ) {
+		result |= x & mask;
+	}
+	return result;
+}
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.61}
+	In section 3.6.6, we examined the following code as a candidate for the use of conditional
+	data transfer:
+	\begin{lstlisting}
+long cread(long *xp) {
+	return (xp ? *xp : 0);
+}
+	\end{lstlisting}
+	We showed a trial implementation using a conditional move instruction but argued that it was
+	not valid, since it could attempt to read from a null address.
+	
+	\
+	Write a C function \texttt{cread\_alt} that has the same behavior as \texttt{cread}, except
+	that it can be compiled to use a conditional data transfer. When compiled, the generated code
+	should use a conditional move instruction rather than one of the jump instructions.
+\end{ex}
+
+\begin{sol}
+	\
+	The reason why the trial implementation failed was because it evaluated \texttt{*xp}
+	and \texttt{0} regardless of the value in \texttt{xp}, which could result in a null
+	pointer exception when \texttt{xp} is dereferenced. The code below would work:
+	\begin{lstlisting}
+long cread(long *xp) {
+	long zp = 0;
+	if (xp != NULL)
+		zp = *xp;
+	return zp;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.62}
+	The code that follows shows an example of branching on an enumerated type value in
+	a switch statement. Recall that enumerated types in C are simply a way to introduce a
+	set of names having associated integer values. By default, the values are assigned to
+	the names count from zero upward. In our code, the actions associated with the different
+	case labels have been  omitted.
+	\begin{lstlisting}
+/* Enumerated type creates a set of constants numbered 0 and upward */
+typedef enum {MODE_A, MODE_B, MODE_C, MODE_D, MODE_E} mode_t;
+
+long switch3(long *p1, long *p2, mode_t action)
+{
+	long result = 0;
+	switch(action) {
+		case MODE_A:
+		
+		case MODE_B:
+		
+		case MODE_C:
+		
+		case MODE_D:
+		
+		case MODE_E:
+		
+		default:
+		
+	}
+	return result;
+}
+	\end{lstlisting}
+	The part of the generated assembly code implementing the different actions is shown
+	below:
+	\begin{lstlisting}[language={}]
+	p1 in %rdi, p2 in %rsi, action in %edx
+.L8:							MODE_E
+	movl	$27,		%eax
+	ret
+.L3:							MODE_A
+	movq	(%rsi),		%rax
+	movq	(%rdi),		%rdx
+	movq	%rdx,		(%rsi)
+	ret
+.L5:							MODE_B
+	movq	(%rdi),		%rax
+	addq	(%rsi),		%rax
+	movq	%rax,		(%rdi)
+	ret
+.L6:							MODE_C
+	movq	$59,		(%rdi)
+	movq	(%rsi),		%rax
+	ret
+.L7:							MODE_D
+	movq	(%rsi),		%rax
+	movq	%rax,		(%rdi)
+	movl	$27,		%eax
+	ret
+.L9:							default
+	movl	$12,		%eax
+	ret
+	\end{lstlisting}
+	The annotations indicated the argument locations, the register values, and the case labels
+	for the different jump destinations. Fill in the missing parts of the C code. It contained
+	one case that fell through to another --- try to reconstruct this.
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated assembly is below:
+		\begin{lstlisting}[language={}]
+	p1 in %rdi, p2 in %rsi, action in %edx
+.L8:							MODE_E
+	movl	$27,		%eax	// result = 27
+	ret
+.L3:							MODE_A
+	movq	(%rsi),		%rax	// result = *p2;
+	movq	(%rdi),		%rdx	// long t = *p1;
+	movq	%rdx,		(%rsi)	// *p2 = t;
+	ret
+.L5:							MODE_B
+	movq	(%rdi),		%rax	// result = *p1;
+	addq	(%rsi),		%rax	// result = result + *p2;
+	movq	%rax,		(%rdi)	// *p2 = result;
+	ret
+.L6:							MODE_C
+	movq	$59,		(%rdi)	// *p1 = 59;
+	movq	(%rsi),		%rax	// result = *p2;
+	ret
+.L7:							MODE_D
+	movq	(%rsi),		%rax	// result = *p2;
+	movq	%rax,		(%rdi)	// *p1 = result;
+	movl	$27,		%eax	// result = 27
+	ret
+.L9:							default
+	movl	$12,		%eax	// result = 12
+	ret
+		\end{lstlisting}
+		The corresponding C code is below. The fall-through happens in \texttt{case MODE\_D},
+		which falls through to \texttt{case MODE\_E}:
+		\begin{lstlisting}
+/* Enumerated type creates a set of constants numbered 0 and upward */
+typedef enum {MODE_A, MODE_B, MODE_C, MODE_D, MODE_E} mode_t;
+
+long switch3(long *p1, long *p2, mode_t action)
+{
+	long result = 0;
+	switch(action) {
+		case MODE_A:
+			result = *p2;
+			*p2 = *p1;
+			break;
+		case MODE_B:
+			result = *p1 + *p2;
+			*p2 = result;
+			break;
+		case MODE_C:
+			*p1 = 59;
+			result = *p2;
+			break;
+		case MODE_D:
+			*p1 = *p2;
+		case MODE_E:
+			result = 27;
+			break;
+		default:
+			result = 12;
+			break;
+		
+	}
+	return result;
+}
+		\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.63}
+	This problem will give you a chance to reverse engineer a \texttt{switch} statement from
+	disassembled machine code. In the following procedure, the body of the \texttt{switch} statement
+	has been omitted:
+	\begin{lstlisting}
+long switch_prob(long x, long n) {
+	long result = x;
+	switch(n) {
+			/* Fill in code here */
+			
+	}
+	return result;
+}
+	\end{lstlisting}
+	The disassembled machine code for the procedure follows:
+	\begin{lstlisting}[language={}]
+	long switch_prob(long x, long n)
+	x in %rdi, n in %rsi
+0000000000400590 <switch_prob>:
+	400590:	48 83 ee 3c					sub		$0x3c,%rsi
+	400594: 48 83 fe 05					cmp		$0x5,%rsi
+	400598: 77 29						ja		4005c3 <switch_prob+0x33>
+	40059a: ff 24 f5 f8 06 40 00		jmpq	*0x4006f8(,%rsi,8)
+	4005a1: 48 8d 04 fd 00 00 00		lea		0x0(,%rdi,8),%rax
+	4005a8: 00
+	4005a9: c3							retq
+	4005aa: 48 89 f8					mov		%rdi,%rax
+	4005ad: 48 c1 f8 03					sar		$0x3,%rax
+	4005b1: c3							retq
+	4005b2: 48 89 f8					mov		%rdi,%rax
+	4005b5: 48 c1 e0 04					shl		$0x4,%rax
+	4005b9: 48 29 f8					sub		%rdi,%rax
+	4005bc: 48 89 c7					mov		%rax,%rdi
+	4005bf: 48 0f af ff					imul	%rdi,%rdi
+	4005c3: 48 8d 47 4b					lea		0x4b(%rdi),%rax
+	4005c7: c3							retq
+	\end{lstlisting}
+	The jump table resides in a different area of memory. We can see from the indirect
+	jump on line 5 that the jump table begins at address \texttt{0x4006f8}. Using the
+	\texttt{gdb} debugger, we can examine the six 8-byte words of memory comprising
+	the jump table with the command \texttt{x/6gx 0x4006f8}. \texttt{gdb} prints
+	the following:
+	\begin{lstlisting}[language={}]
+(gdb) x/6gx 0x4006f8
+0x4006f8:	0x00000000004005a1	0x00000000004005c3
+0x400708:	0x00000000004005a1	0x00000000004005aa
+0x400718:	0x00000000004005b2	0x00000000004005bf
+	\end{lstlisting}
+	Fill in the body of the \texttt{switch} statement with C code that will have the
+	same behavior as the machine code.
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated assembly is below:
+	\begin{lstlisting}[language={}]
+	long switch_prob(long x, long n)
+	x in %rdi, n in %rsi
+0000000000400590 <switch_prob>:
+	400590:	48 83 ee 3c					sub		$0x3c,%rsi					// n = n - 60;
+	400594: 48 83 fe 05					cmp		$0x5,%rsi					// compare n:5
+	400598: 77 29						ja		4005c3 <switch_prob+0x33>	// if > goto  400590 + 0x33 (4005c3)
+	40059a: ff 24 f5 f8 06 40 00		jmpq	*0x4006f8(,%rsi,8)			// goto 0x4005a1 + 8*n;
+	4005a1: 48 8d 04 fd 00 00 00		lea		0x0(,%rdi,8),%rax			// result = 8 * x;
+	4005a8: 00
+	4005a9: c3							retq								// return;
+	4005aa: 48 89 f8					mov		%rdi,%rax					// result = x;
+	4005ad: 48 c1 f8 03					sar		$0x3,%rax					// result >>= 3;
+	4005b1: c3							retq								// return;
+	4005b2: 48 89 f8					mov		%rdi,%rax					// result = x;
+	4005b5: 48 c1 e0 04					shl		$0x4,%rax					// result <<= 4;
+	4005b9: 48 29 f8					sub		%rdi,%rax					// result = result - x;
+	4005bc: 48 89 c7					mov		%rax,%rdi					// x = result;
+	4005bf: 48 0f af ff					imul	%rdi,%rdi					// x *= x;
+	4005c3: 48 8d 47 4b					lea		0x4b(%rdi),%rax				// default: result = x + 75;
+	4005c7: c3							retq								// return;
+	\end{lstlisting}
+	The corresponding C code follows. Notice the fall-through for \texttt{case 64} through to the
+	\texttt{default} case, the multi-case for \texttt{60} and \texttt{62}, and the fact that
+	there is no case matching \texttt{61}.
+	\begin{lstlisting}
+long switch_prob(long x, long n) {
+	long result = x;
+	switch(n) {
+		case 60:
+		case 62:
+			result = 8 * x;
+			break;
+		case 63:
+			result = result >> 3;
+			break;
+		case 64:
+			result = (x << 4) - x;
+			x = result;
+			x *= x;
+		default:
+			result = x + 75;
+			break;
+	}
+	return result;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{3.64}
+	Consider the following source code, where $R$, $S$, and $T$ are constants declared with
+	\texttt{\#define}:
+	\begin{lstlisting}
+long A[R][S][T];
+
+long store_ele(long i, long j, long k, long *dest)
+{
+	*dest = A[i][j][k];
+	return sizeof(A);
+}
+	\end{lstlisting}
+	In compiling this program, \texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long store_ele(long i, long j, long k, long *dest)
+	i in %rdi, j in %rsi, k in %rdx, dest in %rcx
+store_ele:
+	leaq	(%rsi, %rsi,2),		%rax
+	leaq	(%rsi,%rax,4),		%rax
+	movq	%rdi,				%rsi
+	salq	$6,					%rsi
+	addq	%rsi,				%rdi
+	addq	%rax,				%rdi
+	addq	%rdi,				%rdx
+	movq	A(,%rdx,8),			%rax
+	movq	%rax,				(%rcx)
+	movl	$3640,				%eax
+	ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Extend Equation 3.1 from two dimensions to three to provide a formula for
+		the location of array element \texttt{A[i][j][k]}.
+		\item Use your reverse engineering skills to determine the values of $R$, $S$,
+		and $T$ based on the assembly code.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Equation 3.1 says that if \texttt{T} is a C type, possibly defined by a
+		\texttt{typedef}, then the array
+		\begin{center}
+			\texttt{T D[R][C];}
+		\end{center}
+		has elements \texttt{D[i][j]} at memory address
+		\begin{center}
+			\texttt{\&D[i][j]} = $x_D+L(C\cdot i + j)$
+		\end{center}
+		where $R$ is the number of rows, $C$ is the nubmer of columns, $x_D$ is the base
+		address of $D$ (where the first element is), $L$ is the size of data type $T$
+		in bytes, and $C$ is the number of columns. The extension for \texttt{A[R][S][T]} is as follows:
+		\begin{center}
+			\texttt{\&A[i][j][k]} = $x_A+L(T(S\cdot i + j) + k)$
+		\end{center}
+		where $x_A$ is the based address of $A$, $L$ is the data type of the elements in $A$,
+		$T$ is the size specified in the last dimension, and $S$ is the size specified in the
+		second dimension.
+		\item Below I have annotated the assembly:
+		\begin{lstlisting}[language={}]
+	long store_ele(long i, long j, long k, long *dest)
+	i in %rdi, j in %rsi, k in %rdx, dest in %rcx
+store_ele:
+	leaq	(%rsi, %rsi,2),		%rax	// result = j + 2j;			// 3j
+	leaq	(%rsi,%rax,4),		%rax	// result = j + 4 * result;	// 13j;
+	movq	%rdi,				%rsi	// long t = i;
+	salq	$6,					%rsi	// t <<= 6;				// i * 64
+	addq	%rsi,				%rdi	// i += t;				// i + 64i
+	addq	%rax,				%rdi	// i += result;			// 65i + 13j
+	addq	%rdi,				%rdx	// k += i;				// 65i + 13j + k
+	movq	A(,%rdx,8),			%rax	// result = A[8*k];		// A[8*(65i+13j+k)]
+	movq	%rax,				(%rcx)	// *dest = result
+	movl	$3640,				%eax	// result = 3640;
+	ret									// return
+		\end{lstlisting}
+		We can also see that
+		the index of \texttt{A} is $8\cdot (65i+13j+k)=8\cdot (13\cdot (5\cdot i+j)+k))$. The
+		$8$ is the size of \texttt{long}, $13$ is the value of $T$, and $5$ is the size
+		of $S$. Since the value of the product is \texttt{3640}, this suggests that $R=(13\cdot 5)=56$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.65}
+	The following code transposes the elements of an $M\times M$ array, where $M$ is a constant
+	defined by \texttt{\#define}:
+	\begin{lstlisting}
+void transpose(long A[M][M]) {
+	long i, long j;
+	for (i = 0; i < M; i++)
+		for (j = 0; j < i; j++) {
+			long t = A[i][j];
+			A[i][j] = A[j][i];
+			A[j][i] = t;
+		}
+}
+	\end{lstlisting}
+	When compiled with optimization level \texttt{-O1}, \texttt{gcc} generates the following
+	for the inner loop of the function:
+	\begin{lstlisting}[language={}]
+.L6:
+	movq	(%rdx),		%rcx
+	movq	(%rax),		%rsi
+	movq	%rsi,		(%rdx)
+	movq	%rcx,		(%rax)
+	addq	$8,			%rdx
+	addq	$120,		%rax
+	cmpq	%rdi,		%rax
+	jne		.L6
+	\end{lstlisting}
+	We can see that \texttt{gcc} has converted the array indexing to pointer code.
+	\begin{enumerate}[label=(\alph*)]
+		\item Which register holds a pointer to array element \texttt{A[i][j]}?
+		\item Which register holds a pointer to array element \texttt{A[j][i]}?
+		\item What is the value of $M$?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item In the inner loop, $j$ increases while $i$ is fixed. Recall that the memory address
+		of \texttt{A[i][j]} is given by
+		\begin{center}
+			\texttt{\&A[i][j]} = $x_A+8(M\cdot i+j)$
+		\end{center}
+		where $x_A$ is the base address of $A$ and $M$ is the number of columns in $A$.
+		Then when $j$ is replaced by $j+1$, the formula suggests an increased in the address by
+		$8$. Therefore, we expect \texttt{A[i][j]} to be the one whose memory address increases
+		by 8. The assembly is annotated accordingly below:
+\begin{lstlisting}[language={}]
+.L6:
+	movq	(%rdx),		%rcx	// long a = *Aij;
+	movq	(%rax),		%rsi	// long b = *Aji;
+	movq	%rsi,		(%rdx)	// *Aij = b;
+	movq	%rcx,		(%rax)	// *Aji = a;
+	addq	$8,			%rdx	// Aij = Aij + 8
+	addq	$120,		%rax	// Aji = Aji + 120;
+	cmpq	%rdi,		%rax	// compare Aji:A
+	jne		.L6					// if != goto .L6
+\end{lstlisting}
+		From this we can conclude that \texttt{A[i][j]} is held in register \texttt{\%rdx}.
+		\item A similar argument implies that when $i$ is increased to $i+1$, then
+		the address of \texttt{A[i][j]} increases by $8M$. Keeping in mind that $i$
+		is fixed and that $j$ is increasing, this suggests that \texttt{A[j][i]} corresponds
+		to the register whose value is increasing by $8M$. In the assembly code above, this
+		is register \texttt{\%rax}, increasing by 120.
+		\item Since $8M=120$ see that $M=15$.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.66}
+	Consider the following source code, where \texttt{NR} and \texttt{NC} are macro expressions
+	declared with \texttt{\#define} that compute the dimensions of array \texttt{A} in terms of
+	parameter $n$. This code computes the sum of the elements of column $j$ of the array.
+	\begin{lstlisting}
+long sum_col(long n, long A[NR(n)][NC(n)], long j) {
+	long i;
+	long result = 0;
+	for (i = 0; i < NR(n); i++)
+		result += A[i][j];
+	return result;
+}
+	\end{lstlisting}
+	In compiling this program, \texttt{gcc} generates the following assembly code:
+	\begin{lstlisting}[language={}]
+	long sum_col(long n, long A[NR(n)][NC(n)], long j)
+	n in %rdi, A in %rsi, j in %rdx
+sum_col:
+	leaq	1(,%rdi,4),		%r8
+	leaq	(%rdi,%rdi,2),	%rax
+	movq	%rax,			%rdi
+	testq	%rax,			%rax
+	jle		.L4
+	salq	$3,				%r8
+	leaq	(%rsi,%rdx,8),	%rcx
+	movl	$0,				%eax
+	movl	$0,				%edx
+.L3:
+	addq	(%rcx),			%rax
+	addq	$1,				%rdx
+	addq	%r8,			%rcx
+	cmpq	%rdi,			%rdx
+	jne		.L3
+	rep; ret
+.L4:
+	movl	$0,				%eax
+	ret
+	\end{lstlisting}
+	Use your reverse engineering skills to determine the definitions of \texttt{NR} and
+	\texttt{NC}.
+\end{ex}
+
+\begin{sol}
+	\
+	I have annotated the assembly below:
+	\begin{lstlisting}[language={}]
+	long sum_col(long n, long A[NR(n)][NC(n)], long j)
+	n in %rdi, A in %rsi, j in %rdx
+sum_col:
+	leaq	1(,%rdi,4),		%r8		// long t = 1 + 4n;
+	leaq	(%rdi,%rdi,2),	%rax	// long result = n + 2n;	// 3n
+	movq	%rax,			%rdi	// n = result;	// 3n
+	testq	%rax,			%rax	// test result
+	jle		.L4						// if <=
+	salq	$3,				%r8		// t <<= 3; // multiply by 8
+	leaq	(%rsi,%rdx,8),	%rcx	// long q = A + 8*j;	// First in col j
+	movl	$0,				%eax	// result = 0;
+	movl	$0,				%edx	// j = 0;
+.L3:
+	addq	(%rcx),			%rax	// result += *q;
+	addq	$1,				%rdx	// j++;	// used in comparison
+	addq	%r8,			%rcx	// q += t;
+	cmpq	%rdi,			%rdx	// compare j:n
+	jne		.L3						// if != go to .L3
+	rep; ret						// return;
+.L4:
+	movl	$0,				%eax	// result = 0;
+	ret								// return;
+	\end{lstlisting}
+	We can see that \texttt{NR(n)} is $3n$, and \texttt{NC(n)} is $1+4n$.
+\end{sol}
+
+\begin{ex}{3.67}
+	For this exercise, we will examine the code generated by \texttt{gcc} for functions that have
+	structures as arguments and return values, and from this see how these language features are
+	typically implemented.
+	
+	\
+	The following C code has a function \texttt{process} having structures as argument and return
+	values, and a function \texttt{eval} that calls \texttt{process}:
+	\begin{lstlisting}
+typedef struct {
+	long a[2];
+	long *p;
+} strA;
+
+typedef struct {
+	long u[2];
+	long q;
+} strB;
+
+strB process(strA s) {
+	strB r;
+	r.u[0] = s.a[1];
+	r.u[1] = s.a[0];
+	r.q = *s.p;
+	return r;
+}
+
+long eval(long x, long y, long z) {
+	strA s;
+	s.a[0] = x;
+	s.a[1] = y;
+	s.p = &z;
+	strB r = process(s);
+	return r.u[0] + r.u[1] + r.q;
+}
+	\end{lstlisting}
+	\begin{lstlisting}[language={}]
+	strB process(strA s)
+process:
+	movq	%rdi,		%rax
+	movq	24(%rsp),	%rdx
+	movq	(%rdx),		%rdx
+	movq	16(%rsp),	%rcx
+	movq	%rcx,		(%rdi)
+	movq	8(%rsp),	%rcx
+	movq	%rcx,		8(%rdi)
+	movq	%rdx,		16(%rdi)
+	ret
+	
+	long eval(long x, long y, long z)
+	x in %rdi, y in %rsi, z in %rdx
+eval:
+	subq	$104,		%rsp
+	movq	%rdx,		24(%rsp)
+	leaq	24(%rsp),	%rax
+	movq	%rdi,		(%rsp)
+	movq	%rsi,		8(%rsp)
+	movq	%rax,		16(%rsp)
+	leaq	64(%rsp),	%rdi
+	call	process
+	movq	72(%rsp),	%rax
+	addq	64(%rsp),	%rax
+	addq	80(%rsp),	%rax
+	addq	$104,		%rsp
+	ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item We can see on line 2 on function \texttt{eval} that it allocates 104 bytes on
+		the stack. Diagram the stack frame for \texttt{eval}, showing the values that it stores
+		on the stack prior to calling \texttt{process}.
+		\item What value does \texttt{eval} pass in its call to \texttt{process}?
+		\item How does the code for \texttt{process} access the elements of structure argument
+		\texttt{s}?
+		\item How does the code for \texttt{process} set the fields of result structure \texttt{r}?
+		\item Complete your diagram of the stack frame for \texttt{eval}, showing how \texttt{eval}
+		accesses the elements of structure \texttt{r}  following the return from \texttt{process}.
+		\item What general principles can you discern about how structure values are passed as
+		function arguments and how they are returned as function results?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	The annotated assembly is below:
+	\begin{lstlisting}[language={}]
+
+eval:
+	subq	$104,		%rsp
+	movq	%rdx,		24(%rsp)
+	leaq	24(%rsp),	%rax
+	movq	%rdi,		(%rsp)
+	movq	%rsi,		8(%rsp)
+	movq	%rax,		16(%rsp)
+	leaq	64(%rsp),	%rdi
+	call	process
+	movq	72(%rsp),	%rax
+	addq	64(%rsp),	%rax
+	addq	80(%rsp),	%rax
+	addq	$104,		%rsp
+	ret
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item The annotated stack is below:
+		\begin{lstlisting}[language={}]
+	strB process(strA s)
+process:
+	movq	%rdi,		%rax			// return address received
+	movq	24(%rsp),	%rdx			// long *p = s.p;
+	movq	(%rdx),		%rdx			// long z = *p;
+	
+	movq	16(%rsp),	%rcx			// long a1 = s.a[1];
+	movq	%rcx,		(%rdi)			// r.u[0] = a1;
+	movq	8(%rsp),	%rcx			// long a0 = s.a[0];
+	movq	%rcx,		8(%rdi)			// r.u[1] = a0;
+	movq	%rdx,		16(%rdi)		// r.q = z;
+	ret
+
+long eval(long x, long y, long z)
+x in %rdi, y in %rsi, z in %rdx
+	long eval(long x, long y, long z)
+	x in %rdi, y in %rsi, z in %rdx
+eval:
+	subq	$104,		%rsp		// Allocate 104 bytes on the stack
+	movq	%rdx,		24(%rsp)	// Store z on the stack at 24 byte offset
+	leaq	24(%rsp),	%rax		// Compute &z;
+	movq	%rdi,		(%rsp)		// s.a[0] = x;
+	movq	%rsi,		8(%rsp)		// s.a[1] = y;
+	movq	%rax,		16(%rsp)	// s.p = &z;
+	leaq	64(%rsp),	%rdi		// Pass address (64 byte stack offset) of r as argument
+	call	process					// Call process
+	movq	72(%rsp),	%rax		// long result = r.u[1]
+	addq	64(%rsp),	%rax		// add r.u[0] to result
+	addq	80(%rsp),	%rax		// add r.q to result
+	addq	$104,		%rsp		// Deallocate stack memory
+	ret
+		\end{lstlisting}
+		The stack frame looks as such:
+		\begin{center}
+			\begin{tabular}{cc}
+				Contents & Stack Offset\\
+				\hline
+				Return address & 104\\
+				\texttt{z} & 24\\
+				\texttt{\&z} & 16\\
+				\texttt{y} & 8\\
+				\texttt{x} & 0\\
+			\end{tabular}
+		\end{center}
+		\item The instruction \texttt{leaq	64(\%rsp),	\%rdi} assigns the first argument.
+		This means \texttt{eval} passes the address of a 64 byte offset of the stack pointer.
+		This is the address of \texttt{structB r}, the structure we wish to fill up with values.
+		\item The \texttt{process} function accesses the elements of \texttt{s} through the stack.
+		\item The code for \texttt{process} uses addressed received as an argument in register
+		\texttt{\%rdi} to set the fields of \texttt{r}. For example, \texttt{r.u[0]} is at the
+		address stored in register \texttt{\%rdi}.
+		\item The updated diagram looks as follows:
+		\begin{center}
+			\begin{tabular}{cc}
+				Contents & Stack Offset\\
+				\hline
+				Return address & 104\\
+				\texttt{r.p} & 80\\
+				\texttt{r.u[1]} & 72\\
+				\texttt{r.u[0]} & 64\\
+				\texttt{z} & 24\\
+				\texttt{\&z} & 16\\
+				\texttt{y} & 8\\
+				\texttt{x} & 0\\
+			\end{tabular}
+		\end{center}
+		\item When structure values are passed as arguments to a function, they are passed
+		on the stack instead of the conventional argument registers. For example, \texttt{eval}
+		places \texttt{s} at the top of the stack. When it calls \texttt{process} and its return
+		address is pushed onto the stack, the \texttt{process} function now accesses its
+		value at an 8 byte stack offset. Now consider how structure values are returned.
+		It uses the address received in an argument register to store values, and then it
+		returns this same address. In this case, \texttt{process} received
+		the address where it should store the structure values in register \texttt{\%rdi},
+		and it immediately places this value in \texttt{\%rax}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.68}
+	In the following code, $A$ and $B$ are constants defined with \texttt{\#define}:
+	\begin{lstlisting}
+typedef struct {
+	int x[A][B];	/* Unknown constants A and B */
+	long y;
+} str1;
+
+typedef struct {
+	char array[B];
+	int t;
+	short s[A];
+	long u;
+} str2;
+
+void setVal(str1 *p, str2 *q) {
+	long v1 = q->t;
+	long v2 = q->u;
+	p->y = v1 + v2;
+}
+	\end{lstlisting}
+	\texttt{gcc} generates the following code for \texttt{setVal}:
+	\begin{lstlisting}[language={}]
+	void setVal(str1 *p, str2 *q)
+	p in %rdi, q in %rsi
+setVal:
+	movslq	8(%rsi),	%rax
+	addq	32(%rsi),	%rax
+	movq	%rax,		184(%rdi)
+	ret
+	\end{lstlisting}
+	What are the values of $A$ and $B$ (The solution is unique.)
+\end{ex}
+
+\begin{sol}
+	\
+	I've annotated the assembly below:
+	\begin{lstlisting}[language={}]
+	void setVal(str1 *p, str2 *q)
+	p in %rdi, q in %rsi
+setVal:
+	movslq	8(%rsi),	%rax		// long result = q->t;
+	addq	32(%rsi),	%rax		// result += q->u;
+	movq	%rax,		184(%rdi)	// p->y = result;
+	ret
+	\end{lstlisting}
+	Since \texttt{struct str1} requires an 8-byte alignment for the
+	\texttt{long y} member, and an \texttt{int} takes up 4 bytes,
+	we may need 4 bytes of padding.  The last instruction indicates
+	that $4AB=184$, suggesting that $AB=46$ or $AB=45$.
+	
+	Note that \texttt{B} must be a multiple of 4 to satisfy the
+	4-byte alignment implied by \texttt{int t}. Since the first
+	instruction accesses \texttt{q->t} at an 8 byte offset, it
+	must be that $5\leq B\leq8$. Since none of these values are factors
+	of $46$, it must be that $AB=45$. The only factor in range is
+	$B=5$. Hence, $A=9$. To make sure this is consistent, note
+	that $A$ must satisfy $8+4+2A+m=32$, where $m$ is some possible
+	padding to ensure 8-byte alignment is satisfied for \texttt{struct str2}.
+	Hence $8+4+2A$ must be between $26$ and $32$ to achieve the necessary
+	8-byte alignment. The value $A=9$ falls right in, causing a padding
+	of $m=2$ to be needed.
+\end{sol}
+
+\begin{ex}{3.69}
+	You are charged with maintaining a large C program, and you come across
+	the following code:
+	\begin{lstlisting}
+typedef struct {
+	int first;
+	a_struct a[CNT];
+	int last;
+} b_struct;
+
+void test(long i, b_struct *bp)
+{
+	int n = bp->first + bp->last;
+	a_struct *ap = &bp->a[i];
+	ap->x[ap->idx] = n;
+}
+	\end{lstlisting}
+	The declarations of the compile-time constant \texttt{CNT} and the
+	structure \texttt{a\_struct} are in a file for which you do not have
+	the necessary access privilege. Fortunately, you have a copy of the
+	\texttt{.o} version of code, which you are able to disassemble with
+	the \texttt{objdump} program, yielding the following disassembly:
+	\begin{lstlisting}[language={}]
+	void test(long i, b_struct *bp)
+	i in %rdi, bp in %rsi
+0000000000000000 <test>:
+	0:	8b 8e 20 01 00 00	mov		0x120(%rsi),%ecx
+	6:	03 0e				add		(%rsi),%ecx
+	8:	48 8d 04 bf			lea		(%rdi,%rdi,4),%rax
+	c:	48 8d 04 c6			lea		(%rsi,%rax,8),%rax
+	10:	48 8b 50 08			mov		0x8(%rax),%rdx
+	14:	48 63 c9			movslq	%ecx,%rcx
+	17:	48 89 4c d0 10		mov		%rcx,0x10(%rax,%rdx,8)
+	1c:	c3					retq
+	\end{lstlisting}
+	Use your reverse engineering skills to deduce the following:
+	\begin{enumerate}[label=(\alph*)]
+		\item The value of \texttt{CNT}.
+		\item A complete declaration of structure \texttt{a\_struct}. Assume
+		that the only fields in this structure are \texttt{idx} and \texttt{x},
+		and that both of these contain signed values.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item I have annotated the assembly:
+		\begin{lstlisting}[language={}]
+	void test(long i, b_struct *bp)
+	i in %rdi, bp in %rsi
+0000000000000000 <test>:
+	0:	8b 8e 20 01 00 00	mov		0x120(%rsi),%ecx	// int n = bp->last
+	6:	03 0e				add		(%rsi),%ecx			// n += bp->first
+	8:	48 8d 04 bf			lea		(%rdi,%rdi,4),%rax	// i + 4i = 5i
+	c:	48 8d 04 c6			lea		(%rsi,%rax,8),%rax	// bp + 8*5i
+	10:	48 8b 50 08			mov		0x8(%rax),%rdx	// long t = M[8+bp+40i]
+	14:	48 63 c9			movslq	%ecx,%rcx			// Extend n to 64 bit
+	17:	48 89 4c d0 10		mov		%rcx,0x10(%rax,%rdx,8) // M[16+bp+40i+8t]=n
+	1c:	c3					retq
+		\end{lstlisting}
+		Note that \texttt{0x120} is $288$ in decimal, and it corresponds
+		to the offset of \texttt{int last} in \texttt{struct b\_struct}.
+		Line \texttt{0x10} computes \texttt{8+bp+40i}. This suggests that the
+		size of each \texttt{a\_struct} is 40 bytes. Since the instruction loads a value from memory and not an address, this must be the value \texttt{ap->idx}. This suggests \texttt{idx} is the first member of \texttt{a\_struct}.
+		The 8 byte offset includes the first 4 bytes to skip \texttt{int first}, and a 4 byte padding. Hence, \texttt{a[CNT]} begins at an offset of 8
+		and ends at an offset of 288, so it takes up 280 bytes, making
+		\texttt{CNT} 7.
+		
+		
+		\item  On line \texttt{0x17}, the \texttt{16+bp+40i+8t} includes the
+		4 byte padding, the 4 byte padding, and the \texttt{idx}, which must be
+		an 8 byte \texttt{long} since it is used as an index. Finally, the $8t$ suggests an 8 byte alignment of \texttt{x}. Since \texttt{a\_struct} takes up
+		40 bytes, the remaining 32 bytes come from \texttt{x}. Since it
+		stores \texttt{n}, a type \texttt{long}, the elements must also be
+		of type \texttt{long}. Hence \texttt{a\_struct} is as follows:
+		\begin{lstlisting}
+struct {
+	long idx;
+	long x[4];
+} a_struct;
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{3.70}
+	Consider the following union declaration:
+	\begin{lstlisting}
+union ele {
+	struct {
+		long *p;
+		long y;
+	} e1;
+	struct {
+		long x;
+		union ele *next;
+	} e2;
+};
+	\end{lstlisting}
+	This declaration illustrates that structures can be embedded within
+	unions. The following function (with some expressions omitted) operates
+	on a linked list having these unions as list elements:
+	\begin{lstlisting}
+void proc (union ele *up) {
+	up->_________ = *(___________) - ____________;
+}
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What are the offsets (in bytes) of the following fields:
+		\begin{center}
+			\begin{tabular}{cc}
+				\texttt{e1.p} & \makebox[2cm]{\hrulefill}\\
+				\texttt{e1.y} & \makebox[2cm]{\hrulefill}\\
+				\texttt{e2.x} & \makebox[2cm]{\hrulefill}\\
+				\texttt{e2.next} & \makebox[2cm]{\hrulefill}
+			\end{tabular}
+		\end{center}
+		\item How many total bytes does the structure require?
+		\item The compiler generates the following assembly code for
+		\texttt{proc}:
+		\begin{lstlisting}[language={}]
+	void proc (union ele *up)
+	up in %rdi
+proc:
+	movq	8(%rdi), %rax
+	movq	(%rax), %rdx
+	movq	(%rdx), %rdx
+	subq	8(%rax), %rdx
+	movq	%rdx, (%rdi)
+	ret
+		\end{lstlisting}
+		On the basis of this information, fill in the missing expressions in
+		the code for \texttt{proc}. \emph{Hint}: Some union references can
+		have ambiguous interpretations. These ambiguities get resolved as you
+		see where the references lead. There is only one answer that does not
+		perform any casting and does not violate any type constraints.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\begin{enumerate}[label=(\alph*)]
+		\item The offsets are given as follows:
+		\begin{center}
+			\begin{tabular}{cc}
+				\texttt{e1.p} & 0\\
+				\texttt{e1.y} & 8\\
+				\texttt{e2.x} & 0\\
+				\texttt{e2.next} & 8
+			\end{tabular}
+		\end{center}
+		\item Since pointers take up 8 bytes, the union takes up
+		16 bytes.
+		\item The annotated assembly follows:
+		\begin{lstlisting}[language={}]
+	void proc (union ele *up)
+	up in %rdi
+proc:
+	movq	8(%rdi), %rax	// long *next = up->next;
+	movq	(%rax), %rdx	// long *p = *next;
+	movq	(%rdx), %rdx	// long r = *p;
+	subq	8(%rax), %rdx	// r -= next->y;
+	movq	%rdx, (%rdi)	// up->x= r;
+	ret
+		\end{lstlisting}
+		This means the C code fills up to:
+		\begin{lstlisting}
+void proc (union ele *up) {
+	up->x = *(up->next->p) - up->next->y;
+}
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
 \end{document}
