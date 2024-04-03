@@ -4901,4 +4901,20 @@ void proc (union ele *up) {
 	\end{enumerate}
 \end{sol}
 
+\begin{ex}{3.70}
+	Write a function \texttt{good\_echo} that reads a line from standard
+	input and writes it to standard output. Your implementation should work
+	for an input line of arbitrary length. You may use the library function
+	\texttt{fgets}, but you must make sure function works correctly even when
+	the input line requires more space than you have allocated for your buffer.
+	Your code should also check for error conditions and return when one is
+	encountered. Refer to the definitions of the standard I/O functions for
+	documentation.
+\end{ex}
+
+\begin{sol}
+	See \texttt{./71-good-echo}:
+	\lstinputlisting{./71-good-echo/good_echo.c}
+\end{sol}
+
 \end{document}
