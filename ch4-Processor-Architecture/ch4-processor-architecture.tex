@@ -1,0 +1,256 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 4: Processor Architecture}
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{4.1}
+	Determine the byte encoding of the Y86-64 instruction sequence that follows.
+	The line \texttt{.pos 0x100} indicates that the starting address of the object
+	code should be \texttt{0x100}.
+	
+	\begin{lstlisting}[language={}]
+.pos 0x100	# Start code at address 0x100
+	irmovq	$15,%rbx
+	rrmovq	%rbx,%rcx
+loop:
+	rmmovq	%rcx,-3(%rbx)
+	addq	%rbx,%rcsx
+	jmp		loop
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The \texttt{irmovq} instruction has a code part of \texttt{0x3}
+	and control part of \texttt{0x0}, which we put together as
+	\texttt{0x30}. Its instruction format does not use a source register, and
+	a \texttt{0x15} indicates; the destination register \texttt{\%rbx} is
+	encoded as \texttt{0x3}. Finally, \text{\$15} is hexadecimal \texttt{0xf},
+	which after extending to 64 bits gives \texttt{0x000000000000000f};
+	we reserve the byte orders to get \texttt{0f00000000000000} for the
+	encoding of the instruction. Altogether this  takes up 10 bytes, so
+	the next instruction has address \texttt{0x10A}, an offset of \texttt{.pos}
+	by 10.
+	
+	\
+	The \texttt{rrmovq} is encodded as \texttt{0x20}. Its source register
+	is \texttt{\%rbx} with encoding \texttt{0x3}, and its destination
+	\texttt{\%rcx} with encoding \texttt{0x1}. Overall, this instruction
+	takes up \texttt{2 bytes}, so the next instruction has address \texttt{0x10C}.
+	
+	\
+	The \texttt{loop} is a placeholder for an address, so it will be
+	replaced by the address \texttt{0x1c}.
+	
+	\
+	The \texttt{rmmovq} has encoding \texttt{0x40}. Its source register is 
+	\texttt{\%rcx} with \texttt{0x1}, and the destination is a memory
+	reference with base address given by register \texttt{\%rbx} with
+	encoding \texttt{0x3}, and offset \texttt{-3}, which is given by
+	\texttt{0xfffffffffffffffd}. We reverse it to \texttt{0xfdffffffffffffff}
+	for the instruction encoding. This instruction takes up 10 bytes, so the
+	next one starts at address \texttt{0x116}.
+	
+	\
+	The \texttt{addq} has encoding \texttt{0x60}. Its source and destination
+	registers have encodings \texttt{0x3} and \texttt{0x1}, respectively.
+	The whole instruction takes up 2 bytes, so the next starting address
+	is \texttt{0x118}.
+	
+	\
+	The \texttt{jmp} is encoded as \texttt{0x70}, and \texttt{loop} is
+	replaced by the address \texttt{0x010c}, whose bytes we reverse to
+	\texttt{0c01000000000000}. The entire translation is:
+	\begin{lstlisting}[language={}]
+0x100: 30 f3 0f00000000000000
+0x10A: 20 31
+0x10C: 40 13 fdffffffffffffff
+0x116: 60 31
+0x118: 70 0c01000000000000
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.2}
+	For each byte sequence listed, determine the Y86-64 instruction
+	sequence it encodes. IF there is some invalid byte in the sequence,
+	show the instruction sequence up to that point, and indicate where
+	the invalid byte occurs. For each sequence, we show the starting
+	address then a colon, and then the byte sequence.
+	\begin{enumerate}[label=(\alph*)]
+		\item
+			\texttt{0x100: 30f3fcffffffffffffff40630008000000000000}
+		
+		\item 
+			\texttt{0x200: a06f800c020000000000000030f30a00000000000000}
+		\item 
+			\texttt{0x300: 5054070000000000000010f0b01f}
+		\item 
+			\texttt{0x400: 611373000400000000000000}
+		\item 
+			\texttt{0x500: 6362a0f0}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The initial \texttt{30} makes this a \texttt{irmovq}
+		instruction. The following \texttt{f} represents that a source
+		is not needed, and the \texttt{3} that the destination register
+		is \texttt{\%rbx}. The 8-byte value is \texttt{fcffffffffffffff},
+		which is \texttt{-4} in decimal. This instruction takes up 10 bytes.
+		
+		The \texttt{40} that follows means
+		we have a \texttt{rmmovq} instruction expecting two registers an
+		an offset. The \texttt{6} means the source is \texttt{\%rsi},
+		and the \texttt{3} , means the destination if \texttt{\%rbx}.
+		The \texttt{00080000000000} reverses to \texttt{00000000008000},
+		completing the instruction and taking up 9 bytes.
+		The last two \texttt{00} indicate the \texttt{halt} instruction.
+		Altogether, we have:
+		\begin{lstlisting}[language={}]
+0x100: irmovq -4,%rbx
+0x10C: rmmovq %rsi0x800(%rbx)
+0x115: halt
+		\end{lstlisting}
+		\item The \texttt{a0} makes this a \texttt{pushq} instruction,
+		the following \texttt{6} is source register \texttt{\%rsi}, and the
+		following \texttt{f} that there is no destination register.
+		
+		Starting at \texttt{80}, we have the start of the encoding for
+		a \texttt{call} instruction. The destination is encoded by
+		the 8 bytes \texttt{0c02000000000000}, which we reverse to
+		\texttt{000000000000020c}, or simply \texttt{0x020c}.
+		
+		The next \texttt{0x00} indicates a \texttt{halt} instruction.
+		
+		\
+		The next \texttt{30} means we are parsing a \texttt{irmovq} command,
+		with no source register instructed by the \texttt{f} and destination
+		register \texttt{3} which is \texttt{\%rbx}. The constant in reverse
+		is given by \texttt{0x0a00000000000000}, so we reverse it to
+		\texttt{000000000000000a}. The program is:
+		\begin{lstlisting}[language={}]
+0x200:	pushq %rsi
+0x202:	call 0x000000000000020c
+0x20b:	halt
+0x20c:	irmovq $10,%rbx
+		\end{lstlisting} 
+		\item The initial \texttt{50} makes this a \texttt{mrmovq}
+		instruction. The following byte \texttt{54} means that the
+		source and destination registers are \texttt{\%rsp} and
+		\texttt{\%rbp}, respectively. The source is a memory reference
+		with a an offset given by the following 8 bytes\texttt{0x0700000000000000},
+		which we reverse to \texttt{0x0000000000000007}, or decimal \texttt{7}.
+		
+		\
+		The \texttt{10} means we have a \texttt{nop}. The \texttt{f0}
+		is an invalid byte. \texttt{b01f} means \texttt{popq} \texttt{\%rcx}.
+		Altogether we have:
+		\begin{lstlisting}[language={}]
+0x300: mrmovq 7(%rsp),%rbp
+0x30a: nop
+0x30b: # invalid
+0x30c: popq %rcx
+		\end{lstlisting}
+		
+	
+		\item The \texttt{61} makes this a \texttt{subq} instruction,
+		with source register \texttt{\%rcx} and destination register
+		\texttt{\%rbx}, as given by \texttt{0x13}. The instruction is
+		\texttt{subq \%rcx, \%rbx}.
+		
+		000400000000000000
+		The \texttt{73} that follows indicates a \texttt{je} instruction,
+		followed by the reversed constant address \texttt{0004000000000000},
+		which we reverse to \texttt{0000000000000400}. The last \texttt{00}
+		indicates a \texttt{halt}:
+		\begin{lstlisting}[language={}]
+0x400: subq %rcx, %rbx
+0x402: je 0x0000000000000400
+0x40b: halt
+		\end{lstlisting}
+		\item The \texttt{63} makes this a \texttt{xorq} instruction,
+		with source register \texttt{\%rsi} and destination register
+		\texttt{\%rdx}, as indicated by the \texttt{62}. The instruction
+		is \texttt{xorq \%rsi, \%rdx}. We then have \texttt{a0} for
+		a \texttt{pushq} instruction, but the \texttt{f} says that
+		there is no source register, which is invalid:
+		\begin{lstlisting}[language={}]
+0x500: xorq %rsi, %rdx
+0x502: pushq f0 # invalid byte register f0
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\end{document}
