@@ -253,4 +253,235 @@ loop:
 	\end{enumerate}
 \end{sol}
 
+\begin{ex}{4.3}
+	One common pattern in machine-level programs is to add a constant value to
+	a register. With the Y86-64 presented thus far, this requires first using
+	an \texttt{irmovq} to set a register to the constant, then an \texttt{addq}
+	instruction to add this value to the destination register. Suppose we now
+	want to add a new instruction \texttt{iaddq} with the following format:
+	\begin{center}
+		\begin{tabular}{l|l|l|l|l|llllllll}
+			Byte & \texttt{0} & {} & \texttt{1} & {} & \texttt{2} & \texttt{3} & \texttt{4} & \texttt{5} & \texttt{6} & \texttt{7} & \texttt{8} & \texttt{9}\\
+			\hline
+			\texttt{iddq V, rB} & \texttt{C} & \texttt{0} & \texttt{F} & \texttt{rB} & \multicolumn{8}{c}{\texttt{V}}\\
+			\hline
+		\end{tabular}
+	\end{center}
+	This instruction adds the constant value \texttt{V} to register \texttt{rB}.
+	\
+	
+	Re-write the Y86-64 \texttt{sum} function of Figure 4.6 to make use of the
+	\texttt{iaddq} instruction. In the original version, we dedicate registers
+	\texttt{\%r8} and \texttt{\%r9} to hold constant values. Now, we can avoid
+	using those registers altogether.
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{lstlisting}[language={}]
+	long sum(long *start, long count)
+	start in %rdi, count in %rsi
+sum:
+	xorq	%rax,%rax	# sum = 0
+	andq	%rsi,%rsi	# Set condition code
+	jmp test
+loop:
+	mrmovq	(%rdi),%r10	# Get *start
+	addq	%r10,%rax	# Add to sum
+	iaddq	$1,%rdi		# start++
+	iaddq	$-1,%rsi	# count--, set condition code
+test:
+	jne		loop		# Stop when 0
+	ret
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.4}
+	Write Y86-64 code to implement a recursive sum function \texttt{rsum},
+	based on the following code:
+	
+	\begin{lstlisting}
+long rsum(long *start, long count)
+{
+	if (count <= 0)
+		return 0;
+	return *start + rsum(start+1, coount-1);
+}
+	\end{lstlisting}
+	Use the same argument passing and register saving conventions as x86-64
+	code does. You might find it helpful to compile the C code on an
+	x86-64 machine and then translate the instructions to Y86-64.
+\end{ex}
+
+\begin{sol}
+	I compiled \texttt{rsum.c} with the flags: \texttt{gcc -S -O1 rsum.c},
+	and got the following x86-64 output:
+	\lstinputlisting[language={}]{./04-recursive-sum/rsum.s}
+	I used it as the based for the following Y86-64 code, which I have annotated:
+	\begin{lstlisting}[language={}]
+	long rsum(long *start, long count)
+	start in %rdi, count in %rsi
+rsum:
+	irmovq	$0,%rax		# Set return value to 0
+	iaddq	$0,%rsi		# Set condition code
+	jle		.L5:		# if <= 0 goto .L5
+	pushq	%rbx		# Callee-saved register
+	rrmovq	%rdi,%rbx	# save start (memory address)
+	iaddq	$1,%rsi		# count--
+	iaddq	$8,%rdi		# start++ (add 8 bytes to pointer, pointing to next)
+	call rsum			# rsum(start++, count--)
+	mrmovq	(%rbx),%rax	# add *start to return value
+	popq	%rbx		# restore register
+	ret					# return
+.L5:					
+	ret					# return
+	\end{lstlisting}	
+\end{sol}
+
+\begin{ex}{4.5}
+	Modify the Y86-64 code for the \texttt{sum} function (Figure 4.6) to
+	implement a function \texttt{absSum} that computes the sum of absolute
+	values of an array. Use a \emph{conditional jump} instruction within your
+	inner loop.
+\end{ex}
+
+\begin{sol}
+	\
+	My implementation uses the fact that if \texttt{x} is negative, then
+	\texttt{\~{}x + 1} negates it, making it positive.
+	\begin{lstlisting}[language={}]
+	long absSum(long *start, long count)
+	start in %rdi, count in %rsi
+absSum:
+	irmovq	$-1,%r11		# Constant -1
+	xorq	%rax,%rax	# sum = 0
+	andq	%rsi,%rsi	# Set condition code
+	jmp test
+loop:
+	mrmovq	(%rdi),%r10	# Get *start
+	iadd0	$0,%r10		# Set condition code
+	jge		.nonneg		# if >= goto .nonneg
+	xorq	%r11,%r10	# -1 XOR *start
+	iaddq	$1,%r10		# finish computing abs(*start)
+.nonneg:
+	addq	%r10,%rax	# Add to sum
+	iaddq	$1,%rdi		# start++
+	iaddq	$-1,%rsi	# count--, set condition code
+test:
+	jne		loop		# Stop when 0
+	ret
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.6}
+	Modify the Y86-64 code for the \texttt{sum} function (Figure 4.6) to
+	implement a function \texttt{absSum} that computes the sum of absolute
+	values of an array. Use a \emph{conditional move} instruction within your
+	inner loop.
+\end{ex}
+
+\begin{sol}
+	\
+	My implementation uses the fact that if \texttt{x} is negative, then
+	\texttt{\~{}x + 1} negates it, making it positive.
+\begin{lstlisting}[language={}]
+		long absSum(long *start, long count)
+		start in %rdi, count in %rsi
+absSum:
+		irmovq	$-1,%r11		# Constant -1
+		xorq	%rax,%rax	# sum = 0
+		andq	%rsi,%rsi	# Set condition code
+		jmp test
+loop:
+		mrmovq	(%rdi),%r10	# Get *start
+		xorq	%r10,%r11	# -1 XOR *start
+		iaddq	$1,%r11		# Finishes computing -*start
+		cmovge	%r11,%r10	# if %r11 is positive, then %r10 was negative
+		addq	%r10,%rax	# Add to sum
+		iaddq	$1,%rdi		# start++
+		iaddq	$-1,%rsi	# count--, set condition code
+		test:
+		jne		loop		# Stop when 0
+		ret
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.7}
+	Let us determine the behavior of the instruction \texttt{pushq \%rsp}
+	for an x86-64 processor. We could try reading the Intel documentation
+	on this instruction, but a simpler approach is to conduct an experiment
+	on an actual machine. The C compiler would not normally generate this
+	instruction, so we must use hand-generated assembly code for this task.
+	Here is a test function we have written (Web Aside ASM:EASM on page
+	178 describes how to write programs that combine C code with handwritten
+	assembly code):
+	\begin{lstlisting}[language={}]
+	.text
+.global pushtest
+pushtest:
+	movq	%rsp,%rax	# Copy stack pointer
+	pushq	%rsp		# Push stack pointer
+	popq	%rdx		# Pop it back
+	subq	%rdx,%rax	# Return 0 or 4
+	ret
+	\end{lstlisting}
+	In our experiments, we find that \texttt{pushtest} always returns 0.
+	What does this imply about the behavior of the instruction
+	\texttt{pushq \%rsp} under x86-64?
+\end{ex}
+
+\begin{sol}
+	\
+	The first instruction stores the old value of the pointer in \texttt{\%rax}
+	Since the output is always 0, this means that \texttt{pushq \%rsp}
+	pushes the original value of \texttt{\%rsp}.
+\end{sol}
+
+\begin{ex}{4.8}
+	The following assembly-code function lets us determine the behavior of
+	\texttt{popq \%rsp} on x86-64:
+	\begin{lstlisting}[language={}]
+	.text
+.global poptest
+poptest:
+	movq	%rsp,%rdi	# Save stack pointer
+	pushq	$0xabcd		# Push test value
+	popq	%rsp		# Pop to stack pointer
+	movq	%rsp,%rax	# Set popped value as returned value
+	movq	%rdi,%rsp	# Restore stack pointer
+	ret
+	\end{lstlisting}
+	We find this function always returns \texttt{0xabcd}. What does this imply
+	about the behavior of \texttt{pop \%rsp}? What other Y86-64 instruction would
+	have the same behavior?
+\end{ex}
+
+\begin{sol}
+	\
+	It implies that \texttt{pop \%rsp} sets the stack pointer to the
+	value read from memory. We could use \texttt{mrmovq} to read this
+	value instead. This would give the correct return value; however,
+	the value we pushed would remain on the stack, and would therefore
+	point to a lower address than the \texttt{popq} approach.
+\end{sol}
+
+\begin{ex}{4.9}
+	Write an HCL expression for a signal \texttt{xor}, equal to the
+	\emph{exclusive-or} of inputs \texttt{a} and \texttt{b}. What is
+	the relation between the signals \texttt{xor} and \texttt{eq} defined
+	above?
+\end{ex}
+
+\begin{sol}
+	\
+	If we let $\oplus$ be the XOR symbol, we can define it to mean
+	\begin{center}
+	\texttt{a $\oplus$ b} = (\texttt{a \&\& !b}) \texttt{||} (\texttt{!a \&\& b})	
+	\end{center}
+	\texttt{xor} and \texttt{eq} are negations of one another, because
+	\texttt{xor} is 1 when \texttt{a} and \texttt{b} are distinct, and 0
+	otherwise. Meanwhile, \texttt{eq} is 1 when \texttt{a} and \texttt{b}
+	are equal, and 0 otherwise.
+\end{sol}
+
 \end{document}
