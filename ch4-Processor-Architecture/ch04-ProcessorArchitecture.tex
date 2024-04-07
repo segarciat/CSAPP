@@ -664,4 +664,150 @@ word Median = [
 	\end{center}
 \end{sol}
 
+\begin{ex}{4.15}
+	What would be the effect of the instruction \texttt{push \%rsp} according to
+	the steps listed in Figure 4.20? Does this conform to the desired behavior for
+	Y86-64, as determined in Problem 4.7?
+\end{ex}
+
+\begin{sol}
+	\
+	During the \emph{Decode} step, \texttt{valA} and \texttt{valB} would both
+	receive the value \texttt{R[\%rsp]}, which is the address currently stored
+	at the top of the stack. Since the \emph{Memory} step occurs before the
+	\emph{Write back} step, we see that the old value in \texttt{\%rsp} is
+	written to the memory location stored at the new address and then the new
+	address is stored at \texttt{\%rsp}. This is consistent with Problem 4.7
+\end{sol}
+
+\begin{ex}{4.16}
+	Assume the two register writes in the write-back stage for \texttt{popq} occur
+	in the order listed in Figure 4.20. What would be the effect of executing
+	\texttt{popq \%rsp}? Does this conform to the desired behavior for Y86-64,
+	as determined in Problem 4.8?
+\end{ex}
+
+\begin{sol}
+	\
+	The \emph{Decode} reads two copies of the address stored in \texttt{\%rsp},
+	stored in \texttt{valA} and \texttt{valB}
+	In the \emph{Execute} step, the newly computed stack pointer is computed as
+	\texttt{valB + 8}, but the stack pointer is not updated yet.
+	In the \emph{Memory} step, the value at that address is extracted into
+	\texttt{valM}, but not assigned to anything yet. In the \emph{Write back} step, the
+	stack pointer \texttt{\%rsp} is first updated to \texttt{valB + 8}, meaning that
+	its address is being incremented by 8 bytes. Then, the value \texttt{valM}
+	computed previously is stored at the stack pointer. The result is that the
+	stack pointer address has been increased by 8, and the value at its new location
+	is updated to \texttt{valM}, the value referred to by the old memory address
+	of \texttt{\%rsp}.
+\end{sol}
+
+\begin{ex}{4.17}
+	We can see by the instruction encodings (Figure 4.2 and 4.3) that the
+	\texttt{rmovq} instruction is the unconditional version of a more general
+	class of instructions that include the conditional moves. Show how you would
+	modify the steps for the \texttt{rrmovq} instruction below to also handle the
+	six conditional move instructions. You may find it useful to see how the
+	implementation of the \texttt{jXX} instructions (Figure 4.21) handles conditional
+	behavior.
+	\begin{center}
+		\begin{tabular}{cc}
+			Stage & \texttt{cmovXX rA, rB}\\
+			\hline
+			Fetch & icode:ifun $\leftarrow$ $\texttt{M}_1$\texttt{[PC]}\\
+			{} & \texttt{rA:rB} $\leftarrow$ $\texttt{M}_1$\texttt{[PC+1]}\\
+			{} & \texttt{valP} $\leftarrow$ \texttt{PC} + 2\\
+			Decode & \texttt{valA} $\leftarrow$ \texttt{R[rA]}\\
+			Execute & \texttt{valE} $\leftarrow$ 0 + \texttt{valA}\\
+			Memory & {}\\
+			Write back & \texttt{R[rB]} $\leftarrow$ \texttt{valE}\\
+			PC update & \texttt{PC} $\leftarrow$ \texttt{valP}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	During the \emph{Fetch} step, the \texttt{ifun} specifies the function
+	that will be applied to the condition code to decide if the move should
+	occur. Then, in the \emph{Execute} step we compute Cnd as Cond(CC,ifun),
+	meaning that the condition codes will be used as an input to the decoded
+	function, producing a signal Cnd that is 1 or 0. In the \emph{Write back}
+	step, this signal is used to assign either \texttt{valA} or \texttt{valB}
+	to \texttt{rB}.
+	\begin{center}
+		\begin{tabular}{cc}
+			Stage & \texttt{cmovXX rA, rB}\\
+			\hline
+			Fetch & icode:ifun $\leftarrow$ $\texttt{M}_1$\texttt{[PC]}\\
+			{} & \texttt{rA:rB} $\leftarrow$ $\texttt{M}_1$\texttt{[PC+1]}\\
+			{} & \texttt{valP} $\leftarrow$ \texttt{PC} + 2\\
+			Decode & \texttt{valA} $\leftarrow$ \texttt{R[rA]}\\
+			{} & \texttt{valB} $ \leftarrow$ \texttt{R[rB]}\\
+			Execute & \texttt{Cnd} $ \leftarrow$ \texttt{Cond(CC, ifun)}\\
+			Memory & {}\\
+			Write back & \texttt{R[rB]} $\leftarrow$ Cnd ? \texttt{valA}: \texttt{valB}\\
+			PC update & \texttt{PC} $\leftarrow$ \texttt{valP}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{4.18}
+	Fill in the right-hand column of the following table to describe the processing
+	of the \texttt{call} instruction on line 9 of the object code in Figure 4.17:
+	\begin{center}
+		\begin{tabular}{ccc}
+			\multicolumn{2}{r}{Generic} & Specific\\
+			Stage & \texttt{call} Dest & \texttt{call 0x041}\\
+			\hline
+			Fetch & icode:ifun $\leftarrow$ $\texttt{M}_1$\texttt{[PC]}&{}\\
+			{} & \texttt{valC} $\leftarrow$ $\texttt{M}_8$ \texttt{[PC+1]}& \\
+			{} & \texttt{valP} $\leftarrow$ \texttt{PC} + 9 & {}\\
+			Decode & \texttt{valB} $\leftarrow$ \texttt{R[\%rsp]} & {}\\
+			Execute & \texttt{valE} $\leftarrow$ $\texttt{valB} + (-8)$ & {}\\
+			Memory & $\texttt{M}_8[\texttt{valE}]$ $\leftarrow$ \texttt{valP} &{}\\
+			Write back & \texttt{R[\%rsp]} $\leftarrow$ \texttt{valE} & {}\\
+			PC update& \texttt{PC} $\leftarrow$ \texttt{valC} & {}
+		\end{tabular}
+	\end{center}
+	What effect would this instruction execution have on the registers, the
+	PC, and the memory?
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccc}
+			\multicolumn{2}{r}{Generic} & Specific\\
+			Stage & \texttt{call} Dest & \texttt{call 0x041}\\
+			\hline
+			Fetch & icode:ifun $\leftarrow$ $\texttt{M}_1$\texttt{[PC]}&
+			 icode:ifun $\leftarrow$ $\texttt{M}_1$\texttt{[\texttt{0x037}]} = \texttt{8:0}\\
+			
+			{}&\texttt{valC} $\leftarrow$ $\texttt{M}_8$ \texttt{[PC+1]} & \texttt{valC} $\leftarrow$ $\texttt{M}_8$ \texttt{[0x038]} = 
+			\texttt{0x0000000000000041}
+			\\
+			
+			{} & \texttt{valP} $\leftarrow$ \texttt{PC} + 9 &
+			\texttt{valP} $\leftarrow$ \texttt{0x040}\\
+			
+			Decode & \texttt{valB} $\leftarrow$ \texttt{R[\%rsp]} &
+			\texttt{valB} $\leftarrow$ \texttt{128}\\
+			 
+			Execute & \texttt{valE} $\leftarrow$ $\texttt{valB} + (-8)$ &
+			\texttt{valE} $\leftarrow$ 120\\
+			
+			Memory & $\texttt{M}_8\texttt{[valE]}$ $\leftarrow$ \texttt{valP} &
+			$\texttt{M}_8$\texttt{[120]} $\leftarrow$ \texttt{0x040}\\
+			
+			Write back & \texttt{R[\%rsp]} $\leftarrow$ \texttt{valE} &
+			\texttt{R[\%rsp]} $\leftarrow$ 120\\
+			
+			PC update& \texttt{PC} $\leftarrow$ \texttt{valC} &
+			\texttt{PC} $\leftarrow$ \texttt{0x0000000000000041}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
 \end{document}
