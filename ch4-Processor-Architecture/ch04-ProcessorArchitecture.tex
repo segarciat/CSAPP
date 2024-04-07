@@ -484,4 +484,184 @@ poptest:
 	are equal, and 0 otherwise.
 \end{sol}
 
+\begin{ex}{4.10}
+	Suppose you want to implement a word-level equality circuit using the
+	\emph{EXCLUSIVE-OR} circuits from Problem 4.9 rather than bit-level
+	equality circuits. Design such a circuit for a 64-bit \emph{EXCLUSIVE-OR}
+	circuits and two additional logic gates.
+\end{ex}
+
+\begin{sol}
+	\
+	The circuit will have two 64-bit buses \texttt{A} and \texttt{B} as inputs.
+	We use a total of 64 bit-level \emph{EXCLUSIVE-OR} circuits operating in parallel.
+	If \emph{any} of them outputs 1, then the two inputs are distinct, and the
+	overall output should be 0. If all of the bit-level XORs output 0, then the
+	circuit should output 1. We therefore feed the outputs of of the bit-level XORs
+	into a 64-bit OR gate, and pass its output through an inverter.
+\end{sol}
+
+\begin{ex}{4.11}
+	The HCL code for computing the minimum of three words contains four comparison
+	expressions of th form $X$ <= $Y$. Rewrite the code to compute the same result,
+	but using only three comparisons.
+\end{ex}
+
+\begin{sol}
+	\
+	The given HCL was:
+	\begin{lstlisting}[language={}]
+word Min3 = [
+	A <= B && A <= C: A;
+	B <= A && B <= C: B;
+	1				: C;
+];
+	\end{lstlisting}
+	If the first inequality fails, then \texttt{A} is not the minimum.
+	Therefore either \texttt{B} or \texttt{C} is the minimum. This means
+	it's enough to check that \texttt{B} <= C:
+		\begin{lstlisting}[language={}]
+word Min3 = [
+	A <= B && A <= C: A;
+	B <= C			: B;
+	1				: C;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.12}
+	Write HCL code describing a circuit that for word inputs \texttt{A}, \texttt{B},
+	and \texttt{C} selects the \emph{median} of the three values. That is, the output
+	equals the word lying between the minimum and the maximum of the three inputs.
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{lstlisting}[language={}]
+word Median = [
+	A <= B && C <= A || (A <= C && B <= A): A;
+	A <= B && 
+	1				: C;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.13}
+	Fill in the right-hand column of the following table to the describe the processing
+	of the \texttt{irmovq} on line 4 of the object code in Figure 4.17:
+	\begin{center}
+		\begin{tabular}{ccc}
+			\multicolumn{2}{r}{Generic} & Specific\\
+			Stage & \texttt{irmovq V, rB} & \texttt{irmovq \$128,\%rsp}\\
+			\hline
+			Fetch 	&	icode:ifun $\leftarrow$ $\text{M}_1\text{[PC]}$ & {}\\
+			{}		&	\texttt{rA:rB} $\leftarrow\text{M}_1\text{[PC + 1]}$ &\\
+			{}		&	\texttt{valC} $\leftarrow$ $\text{M}_8\text{[PC + 2]}$ &\\
+			{}		&	\texttt{valP} $\leftarrow$ $\text{PC+ 10}$ & \\
+			Decode & {} & {}\\
+			Execute & \texttt{valE} $\leftarrow$ 0 + \texttt{valC}&{}\\
+			Memory & {} & {}\\
+			Write back & \texttt{R[rB]} $\leftarrow$ \texttt{valE} & {}\\
+			PC update & \texttt{PC} $ \leftarrow$ \texttt{valP} & {}\\
+		\end{tabular}
+	\end{center}
+	How does this instruction execution modify the registers and the PC?
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccc}
+			\multicolumn{2}{r}{Generic} & Specific\\
+			Stage & \texttt{irmovq V, rB} & \texttt{irmovq \$128,\%rsp}\\
+			\hline
+			Fetch 	&	icode:ifun $\leftarrow$ $\text{M}_1\text{[PC]}$ & 
+			$\texttt{M}_1\texttt{[0x00a] = 3:0}$\\
+			
+			{}		&	\texttt{rA:rB} $\leftarrow\text{M}_1\text{[PC + 1]}$ &
+			\texttt{rA:rB} $\leftarrow\text{M}_1\texttt{[0x00b] = f:3}$\\
+			
+			{}		&	\texttt{valC} $\leftarrow$ $\text{M}_8\text{[PC + 2]}$ &
+			\texttt{valC} $\leftarrow$ $\text{M}_8\texttt{[0x00c] = 0x15}$\\
+			
+			{}		&	\texttt{valP} $\leftarrow$ $\text{PC+ 10}$ & 
+			\texttt{valP} $\leftarrow$ \texttt{0x00a} + 10 = \texttt{0x014}\\
+			
+			Decode & {} & {}\\
+			
+			Execute & \texttt{valE} $\leftarrow$ 0 + \texttt{valC}&
+			\texttt{valE} $\leftarrow$ 0 + \texttt{0x15}\\
+			
+			Memory & {} & {}\\
+			Write back & \texttt{R[rB]} $\leftarrow$ \texttt{valE} &
+			\texttt{R[rB]} $\leftarrow$ \texttt{valE = \texttt{0x15}}\\
+			PC update & \texttt{PC} $ \leftarrow$ \texttt{valP} & 
+			\texttt{PC} $ \leftarrow$ \texttt{valP = 0x014} \\
+		\end{tabular}
+	\end{center}
+		The stack pointer \texttt{\%rsp} is updated with the value
+		\texttt{0x15}, and the PC is updated with the value \texttt{0x014}.
+\end{sol}
+
+\begin{ex}{4.14}
+	Fill in the right-hand column of the following table to describe the processing
+	of the \texttt{popq} instruction on line 7 of the object in Figure 4.17.
+	\begin{center}
+		\begin{tabular}{ccc}
+			\multicolumn{2}{r}{Generic} & Specific\\
+			Stage & \texttt{popq rA} & \texttt{popq \%rax}\\
+			\hline
+			Fetch &  icode:ifun $\leftarrow$ $\texttt{M}_1\texttt{[PC]}$ & {}\\
+			{} & \texttt{rA:rB} $ \leftarrow$ $\texttt{M}_1\texttt{[PC+1]}$ & {}\\
+			{} & \texttt{valP} $ \leftarrow$ \texttt{PC} + 2 & \\
+			Decode & \texttt{valA}  $\leftarrow$ \texttt{R[\%rsp]} & {}\\
+			{} & \texttt{valB}  $\leftarrow$ \texttt{R[\%rsp]} & {}\\
+			Execute & \texttt{valE} $\leftarrow$  \texttt{valB} + 8 & {}\\
+			Memory & \texttt{valM} $\leftarrow$ $\texttt{M}_8\texttt{[valA]}$ & {}\\
+			Write back & \texttt{R[\%rsp]} $ \leftarrow$ \texttt{valE} & \\
+			{} & \texttt{R[rA]} $\leftarrow$ \texttt{valM}&{}\\
+			PC update & \texttt{PC} $\leftarrow$ \texttt{valP}
+		\end{tabular}
+	\end{center}
+	What effect does this instruction have on the registers and the PC?
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccc}
+			\multicolumn{2}{r}{Generic} & Specific\\
+			Stage & \texttt{popq rA} & \texttt{popq \%rax}\\
+			\hline
+			Fetch &  icode:ifun $\leftarrow$ $\texttt{M}_1\texttt{[PC]}$ & 
+			icode:ifun $\leftarrow$ $\texttt{M}_1\texttt{[PC] = b:0}$ \\
+			
+			{} & \texttt{rA:rB} $ \leftarrow$ $\texttt{M}_1\texttt{[PC+1]}$ & 
+			\texttt{rA:rB} $ \leftarrow$ $\texttt{M}_1\texttt{[PC+1] = 0:f}$\\
+			{} & \texttt{valP} $ \leftarrow$ \texttt{PC} + 2 &
+			\texttt{valP} $ \leftarrow$ \texttt{PC} + 2 = \texttt{0x02e}\\
+			
+			Decode & \texttt{valA}  $\leftarrow$ \texttt{R[\%rsp]} &
+			\texttt{valA}  $\leftarrow$ \texttt{R[\%rsp] = 128}\\
+			
+			{} & \texttt{valB}  $\leftarrow$ \texttt{R[\%rsp]} &
+			\texttt{valA}  $\leftarrow$ \texttt{R[\%rsp] = 128}\\
+			
+			
+			Execute & \texttt{valE} $\leftarrow$  \texttt{valB} + 8 & 
+			\texttt{valE} $\leftarrow$  \texttt{valB} + 8 = 136\\
+			Memory & \texttt{valM} $\leftarrow$ $\texttt{M}_8\texttt{[valA]}$ &
+			\texttt{valM} $\leftarrow$ $\texttt{M}_8\texttt{[valA] = 9}$\\
+			
+			Write back & \texttt{R[\%rsp]} $ \leftarrow$ \texttt{valE} &
+			\texttt{R[\%rsp]} $ \leftarrow$ \texttt{valE} = 136\\
+			{} & \texttt{R[rA]} $\leftarrow$ \texttt{valM}&
+			\texttt{R[rA]} $\leftarrow$ \texttt{valM} = 9\\
+			
+			PC update & \texttt{PC} $\leftarrow$ \texttt{valP} &
+			 \texttt{PC} $\leftarrow$ \texttt{valP} = \texttt{0x02e}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
 \end{document}
