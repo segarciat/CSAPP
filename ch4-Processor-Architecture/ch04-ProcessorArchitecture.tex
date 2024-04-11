@@ -810,4 +810,498 @@ word Median = [
 	\end{center}
 \end{sol}
 
+\begin{ex}{4.19}
+	Write HCL code  for the signal \texttt{need\_valC} in the SEQ  
+	implementation?
+\end{ex}
+
+\begin{sol}
+	\
+	The \texttt{irmovq} instruction places the constant provided in
+	the source into the destination. The \texttt{rmmovq} instruction
+	requires specifying an  offset to the destination memory address.
+	The \texttt{mrmovq} instruction requires specifying an offset to
+	the source memory address. The jump instructions, \texttt{jXX}, require specifying
+	a label that corresponds to the address of instruction to execute
+	after the jump. Finally, the \texttt{call} instruction requires specifying
+	a label corresponding to the first instruction in the procedure being
+	called.
+	\begin{lstlisting}[language={}]
+bool need_valC = 
+	icode in { IIRMOVQ, IRMMOVQ, IMRMOVQ IJXX, ICALL};
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.20}
+	The register signal \texttt{srcB}  indicates which register should be read
+	to generate the signal \texttt{valB}. The desired value is shown as the second
+	step in the double stage in Figures 4.18 to 4.21. Write HCL code for \texttt{srcB}.
+\end{ex}
+
+\begin{sol}
+	\
+	We need \texttt{srcB} in \texttt{rmmovq} because the second register gives the
+	base address in a memory reference. For \texttt{mrmovq}, register \texttt{rB}
+	is in the first position, where once again its address is used to compute the
+	base memory address, as seen in Figure 4.19 on page 389.
+	For \texttt{OPq}, \texttt{srcB} is the second integer operand.
+	
+	\
+	For \texttt{pushq}, \texttt{srcB} gives the value of the stack pointer,
+	which is use to compute the new stack pointer address \texttt{popq},
+	\texttt{valB} once again holds the stack pointer value, and
+	same for \texttt{call}  and \texttt{ret} (see Figure 4.20 and 4.21
+	in pages 391 and 393).
+	\begin{lstlisting}[language={}]
+word srcB = [
+	icode in { IRMMOVQ, IRMMOVQ, IOPQ } : rB;
+	icode in { IPUSHQ, IPOPQ, ICALL, IRET };
+	1:  RNONE; # Don't need register
+]
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.21}
+	Register ID \texttt{dstM} indicates the destination register for write port
+	\texttt{M}, where \texttt{valM}, the value read from memory, is stored. This is shown in Figures 4.18 to 4.21 as the second step in the write-back stage. Write
+	HCL code for \texttt{dstM}.
+\end{ex}
+
+\begin{sol}
+	\
+	From the figures we see that the value read from memory is only ever stored
+	into \texttt{rA}.
+	\begin{lstlisting}[language={}]
+word destM = [
+	icode in { IMRMOVQ, IPOPQ }: rA;
+	1: RNONE;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.22}
+	Only the \texttt{popq} instruction uses both register file write ports
+	simultaneously. For the instruction \texttt{pop \%rsp}, the same address
+	will be used for both \texttt{E} and \texttt{M} write ports, but with
+	different data. To handle this conflict, we must stablish a \emph{priority}
+	among the two write ports so that when both attempt tow rite the same register
+	on the same cycle, only the write from the higher-priority port takes places.
+	Which of the two ports should be given priority in order to implement the
+	desired behavior, as determined in Practice Problem 4.8?
+\end{ex}
+
+\begin{sol}
+	\
+	In Practice Problem 4.8 we determined that the resulting value is that which
+	was read from memory, so port \texttt{M} should be given priority in order
+	to be consistent with that.
+\end{sol}
+
+\begin{ex}{4.23}
+	Based on the first operand of the first step of the execute stage in Figures
+	4.18 to 4.21, write an HCL description for the signal \texttt{aluB} in
+	SEQ.
+\end{ex}
+
+\begin{sol}
+	\
+	In \texttt{IOPQ}, the value \texttt{valB} is the second operand. It's
+	also used in \texttt{mrmovq} and \texttt{rmmovq} to represent the base address of a memory reference, and in \texttt{pushq}, \texttt{popq}, \texttt{call},
+	and \texttt{ret} for the stack pointer value that we either add or decrement.
+	In \texttt{rrmovq}, the first operand is \texttt{valA} and the second is
+	\texttt{0}, the goal is to compute \texttt{valA} to store in the destination
+	register. Therefore, \texttt{aluB} is 0 here. For \texttt{irrmovq}, \texttt{aluA}
+	is \texttt{valC} while \texttt{aluB} is 0.
+	\begin{lstlisting}[language={}]
+word aluB = [
+	icode in { IRMMOVQ, IMRMOVQ, IOPQ, IPUSHQ, IPOPQ, ICALL, IRET } : valB;
+	icode in { IRRMOVQ, IIRMOVQ} : 0;
+	1 : IRNONE;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.24}
+	The conditional move instructions, abbreviated \texttt{cmovXX}, have
+	instruction code \texttt{IRRMOVQ}. As Figure 4.28 shows, we can implement
+	these instructions by making use of the \texttt{Cnd} signal, generated in
+	the execute stage. Modify the HCL code for \texttt{dstE} to implement these
+	instructions.
+\end{ex}
+
+\begin{sol}
+	\
+	For \texttt{cmovXX}, we only ever write to the destination register,
+	\texttt{rB}, if \texttt{Cnd} is asserted. 
+	\begin{lstlisting}[language={}]
+word destE = [
+	Cnd && icode in { IRRMOVQ } : rB;
+	icode in { IRRMOVQ } : rB;
+	icode in { IIRMOVQ, IOPQ } : rB;
+	icode in { IPUSHQ, IPOPQ, ICALL, IRET } : RRSP;
+	1 : RNONE;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.25}
+	Looking at memory operations for the different instructions shown in Figures
+	4.18 to 4.21, we can see that the data for memory writes are always either
+	\texttt{valA} or \texttt{valP}. Write HCL code for the signal \texttt{mem\_data}
+	in \texttt{SEQ}.
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{lstlisting}[language={}]
+word mem_data = [
+	icode in { IRMMOVQ, IPUSHQ} : valA;
+	icode == ICALL : valP;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.26}
+	We want to control the signal \texttt{mem\_write} only for instructions that
+	write data to memory. Write HCL code for the signal \texttt{mem\_write} in
+	SEQ.
+\end{ex}
+
+\begin{sol}
+	\
+	The instructions that write data to memory are precisely those named
+	in Exercise 4.25:
+	\begin{lstlisting}[language={}]
+bool mem_write = icode in { IRMMOVQ, IPUSHQ, ICALL };
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.27}
+	Write HCL code for \texttt{Stat}, generating the four status \texttt{SAOK},
+	\texttt{SADR}, \texttt{SINS}, and \texttt{SHLT}.
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{lstlisting}[language={}]
+Stat = [
+	imem_error || dmem_error: SADDR;
+	!instr_valid : SINS;
+	icode == IHALT : SHALT;
+	1: SAOK;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.28}
+	Suppose we analyze the combinational logic of Figure 4.32 and determine that it
+	can be separated into a sequence of six blocks, named A to F, having delays
+	of 80, 30, 60, 50, 70, and 10 ps, respectively, illustrated as follows:
+	
+	We can create pipelined versions of this design by inserting pipeline registers
+	between pairs of these blocks. Different combinations of pipeline depth (how
+	many stages) and maximum throughput arise, depending on where we insert the
+	pipeline registers. Assume that pipeline register has a delay of 20 ps.
+	\begin{enumerate}[label=(\alph*)]
+		\item Inserting a single register gives a two-stage pipeline. Where should
+		the register be inserted to maximize throughput? What would be the throughput
+		and latency?
+		\item Where should two registers be inserted to maximize throughput of a
+		three-stage pipeline? What should be the throughput and latency?
+		\item Where should three registers be inserted to maximize the throughput
+		of a 4-stage pipeline? What would be the throughput and latency?
+		\item What is the maximum number of stages that would yield a design
+		with the maximum achievable throughput? Describe this design, its throughput,
+		and its latency.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The sum of the delays of all the blocks is still 300 ps. If
+		we place the register between C and D, the first stage will have
+		a delay of 170 ps, while the second stage has a delay of 130 ps.
+		Since the registers have a delay of 20 ps, this means can cycle
+		the clocks every 170 + 20 = 190 ps, yielding a throughput of
+		around 5.26 GIPS. Since processing a full instruction requires 2 cycles,
+		this means the latency is $2\times 190$ ps = 380 ps.
+		\item We can place one register between B and C, and another
+		register between D and E. Then the first stage will take up 110 ps,
+		the second stage will take up 110 ps, and the last stage will take
+		80 ps. Hence we can cycle the clocks every 110 + 20 ps = 130 ps,
+		making the throughput 7.69 GIPS. The latency however is now
+		$3\times130=$ 390 ps.
+		\item Ideally we will place one between A and B, another between
+		C and D, and one more between D and E. The slowest stage would
+		then be given by the sum of the delay of components B and C,
+		for a total of 90 ps. With the added 20 ps register delay, the
+		throughput becomes around 9.09 GIPS. The delay latency is
+		$4\times 9=$ 360 ps.
+		\item Because the first component requires a delay of at least 80 ps
+		and adding a register implies a delay of 20 ps, we know that
+		we will be need to clock at least every 100 ps, for a maximum 
+		throughput of 10 GIPS. To attain it, we require a register between
+		A and B, between B and C,between C and D, and between D and E,
+		for a total of 5 stages. The latency is $5\times 100=$ 500 ps. 
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{4.29}
+	Suppose we could take the system of Figure 4.32 and divide it into an arbitrary
+	number of pipeline stages $k$, each having a delay of $300/k$, and with each
+	pipeline register having a delay of 20 ps.
+	\begin{enumerate}[label=(\alph*)]
+		\item What would be the latency and the throughput of the system, as functions
+		of $k$?
+		\item What would be the ultimate limit on the throughput?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The throughput is given by $T(k)$, where
+		\begin{align*}
+			T(k)&=\frac{1}{\frac{300}{k}+20}\times 10^{12}\\
+			&=\frac{1}{\frac{300+20k}{k}}\times 10^{12}\\
+			&=\frac{k}{300+20k}\times 10^{12}
+		\end{align*}
+		in units of instructions per second. For example, if $k=1$, we get
+		$3.125$ GIPS. The latency is given by $L(k)$, where
+		\begin{align*}
+			L(k)&=k\cdot \left(\frac{300}{k}+20\right)\times 10^{-12}\\
+			&=(300+20k)\times 10^{-12}
+		\end{align*}
+		in units of seconds. For example, if $k=1$, then the latency is
+		$300$ ps.
+		\item We see that $\lim_{k\to\infty}T(k)=\frac{1}{20}\times 10^{12}$
+		instructions per second, which equates 50 GIPS.
+	\end{enumerate}
+\end{sol}
+
+
+\begin{ex}{4.30}
+	Write HCL code for the signal \texttt{f\_stat}, providing the provisional status
+	for the fetched instruction.
+\end{ex}
+
+\begin{sol}
+	\
+	This is largely the same as Exercise 4.27, but instead of \texttt{icode}, we use
+	\texttt{f\_icode}, and we do not use the \texttt{dmem\_error} signal because that
+	is handled in the Memory stage.
+	
+	\begin{lstlisting}[language={}]
+word f_stat = [
+	imem_error : SADR;
+	!instr_valid : SINS;
+	f_icode == SHLT : SHLT;
+	1: SAOK;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.31}
+	The block labeled ``dstE" in the decode stage generates the register ID for the
+	E port of the register file, based on fields from the fetched instruction in pipeline
+	register D. The resulting signal is named \texttt{d\_dstE} in the HCL description
+	of PIPE. Write HCL code for this signal, based on the HCL description of the SEQ
+	signal \texttt{dest\_E}. (See the code for SEQ in Section 4.3.4). Do not concern
+	yourself with the logic to implement condition moves yet.
+\end{ex}
+
+\begin{sol}
+	\
+	In Section 4.3.4, the following HCL description was given for \texttt{dstE}
+	\begin{lstlisting}[language={}]
+# HCL for dstE signal in SEQ implementation of Y86-64
+# WARNING: Conditional move not implemented correctly here
+word dstE = [
+	icode in { IRRMOVQ } : rB;
+	icode in { IIRMOVQ, IOPQ } : rB;
+	icode in { IPUSHQ, IPOPQ, ICALL, IRET } : RRSP;
+	1 : RNONE; # Don't write any register
+];
+	\end{lstlisting}
+	Figure 4.58 shows the PIPE decode and write-back stage logic, indicating that
+	block \texttt{destE} receives inputs \texttt{D\_icode} and \texttt{D\_rB}.
+	Its output is the same after using the new signal names:
+	\begin{lstlisting}[language={}]
+word d_dstE = [
+	D_icode in { IRRMOVQ } : D_rB;
+	D_icode in { IIRMOVQ, IOPQ } : D_rB;
+	D_icode in { IPUSHQ, IPOPQ, ICALL, IRET } : RRSP;
+	1 : RNONE;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.32}
+	Suppose the order of the third and fourth cases (the two forwarding sources from
+	the memory stage) in the HCL code for \texttt{d\_valA} were reversed. Describe
+	the resulting behavior of the \texttt{rrmovq} instruction (line 5) for the following
+	program:
+	\begin{lstlisting}[language={}]
+irmovq	$5,	%rdx
+irmovq	$0x100	%rsp
+rmmovq	%rdx,0(%rsp)
+popq	%rsp
+rrmovq	%rsp,%rax
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\	
+	The \texttt{rrmovq} on line 5 uses \%rsp as a source register, but the the \texttt{popq}
+	instruction on line 4 read and writes its value for memory, leading to a load/use
+	data hazard as described on page 439. To handle this, the processor stalls the
+	\texttt{rrmovq} instruction in line 5 in the decode stage, allowing the
+	\texttt{pop \%rsp} instruction to move on to the memory stage, at which point the value
+	can be forwarded. However, the \texttt{popq \%rsp} instruction produces
+	signals \texttt{M\_dstM} amd \texttt{M\_dstE}, both of which are \texttt{R[\%rsp]}
+	(see Figure 4.20 on page 391),and hence they both match \texttt{d\_srcA}, the
+	source operand to \texttt{rrmovq} on line 5. Since the order of the third
+	and fourth cases is reversed in the HCL Logic for \texttt{d\_valA}, this
+	causes the \texttt{M\_dstE} branch to be chosen, causing \texttt{d\_valA}
+	to take on the value of \texttt{M\_valE}, the value read, which is the new
+	value of the stack pointer (namely, \texttt{0x108}), which is what will
+	be written to \texttt{\%rax}. However this is incorrect, because if the instructions
+	were executed sequentially, then the instruction \texttt{pop \%rsp} would have
+	the value \texttt{5}, which is precisely \texttt{m\_valM}, the value we would
+	have chosen if we had not reversed the order.
+\end{sol}
+
+\begin{ex}{4.33}
+	Suppose the order of the fifth and sixth cases (the two forwarding sources from
+	the write-back stage) in the HCL code for \texttt{d\_valA} were reversed. Write a
+	Y86-64 program that would be executed incorrectly. Describe how the error would occur
+	and its effect on the program behavior.
+\end{ex}
+
+\begin{sol}
+	\
+	The following HCL code would execute incorrectly:
+	\begin{lstlisting}[language={}]
+irmovq 5, %rdx
+irmovq 0x100, %rsp
+rmmovq %rdx, 0(%rsp)
+pop %rsp
+nop
+nop
+rrmovq %rsp, %rax
+	\end{lstlisting}
+	The code sets \texttt{R[\%rdx]} to 5 and \texttt{R[\%rsp]} to \texttt{0x100}.
+	It then loads \texttt{5} at $\texttt{M}_8\texttt{[\%rsp]}$. The \texttt{pushq}
+	is meant to duplicate the value 5 at memory location \texttt{0x0F8}, the new
+	memory location that \texttt{\%rsp} holds. When \texttt{rrmovq} reaches the
+	decode stage, it receives the forwarded values from the \texttt{popq} instruction
+	that is in the Write-back stage. Here, \texttt{W\_dstM} and \texttt{W\_dstE} are
+	both \texttt{\%rsp}, and since the fifth and sixth cases are reversed,
+	this means that the processor will take the action matching \texttt{W\_dstE},
+	meaning that \texttt{d\_valA} will be set to \texttt{W\_valE}, which is
+	the value \texttt{0x108}. However the intended behavior is to get the value
+	5.
+\end{sol}
+
+\begin{ex}{4.34}
+	Write HCL code for the signal \texttt{d\_valB}, giving thee value for source operand
+	\texttt{valB} supplied to pipeline register E.
+\end{ex}
+
+\begin{sol}
+	\
+	The cases are largely the same as for \texttt{d\_valA}, but since \texttt{d\_valB}
+	does not have the dual usage of holding instruction addresses, it's slightly simpler.
+	All forwarded values take precedence, giving priority to values written to memory,
+	and to upcoming instructions at an earlier stage (indicating the last change).
+	\begin{lstlisting}[language={}]
+word d_valB = [
+	d_srcB == e_dstE : e_valE;
+	d_srcB == M_dstM : m_valM;
+	d_srcB == M_dstE : M_valE;
+	d_srcB == W_dstM : W_valM;
+	d_srcB == W_dstE : W_valE;
+	1 : d_rvalB;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.35}
+	Our second case in the HCL code for \texttt{d\_valA} uses signal \texttt{e\_dstE} to see
+	whether to select the ALU output \texttt{e\_valE} as the forwarding source. Suppose instead
+	that we use signal \texttt{E\_dstE}, the destination register ID in pipeline register E for
+	this selection. Write a Y86-64 program that would give an incorrect result with this
+	modified forwarding logic.
+\end{ex}
+
+\begin{sol}
+	\
+	Based on Figure 4.60, the diagram for the PIPE execute logic shows that the control logic
+	block for \texttt{dstE} that produces \texttt{e\_dstE} accepts \texttt{e\_Cnd} and
+	\texttt{E\_icode} as inputs. Therefore, the output \texttt{dstE} produced by
+	\texttt{e\_dstE} takes care of conditional move operations issued by \texttt{cmovXX} instructions,
+	which does not get accounted for when forwarding \texttt{E\_dstE}.
+	Therefore, the following program would execute incorrectly:
+	\begin{lstlisting}[language={}]
+irmovq $-1, %rsi
+irmovq $50, %rdx
+irmovq $-50, %rbx
+addq %rdx, %rbx # Set CC
+cmovne %rsi, %rbx
+rrmovq %rbx, %rax
+	\end{lstlisting}
+	The \texttt{addq} will turn off \texttt{ZF}, causing \texttt{e\_Cnd} to be on, because
+	the addition yields 0. Because \texttt{E\_dstE} does not account for this, the \texttt{rrmovq}
+	instruction receives the value that \texttt{\%rbx} would have had if the conditional move
+	had succeeded -- namely, $-1$, the value of \texttt{\%rsi}. However, because the move
+	failed, it should have used $-50$ from its register.
+\end{sol}
+
+\begin{ex}{4.36}
+	In this stage, we can complete the computation of the status code \texttt{Stat} by detecting
+	the case of an invalid address for the data memory. Write HCL code for the signal
+	\texttt{m\_stat}.
+\end{ex}
+
+\begin{sol}
+	\
+	We can identify any existing errors due to an invalid memory address, and if none were
+	detected, then forward the status we received.++
+	\begin{lstlisting}[language={}]
+word m_stat = [
+	dmem_error : SADR;
+	1 : M_stat;
+];
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{4.37}
+	Write a Y86-64 assembly-language program that causes combination A to arise and determines
+	whether the control logic handles it correctly.
+\end{ex}
+
+\begin{sol}
+	\
+	Combination A involves a jump which, if taken, would have led to a return statement
+	being executed early.
+	\begin{lstlisting}[language={}]
+
+
+irmovq $1, %rdx
+irmovq $-1, %rax
+add %rdx, %rax		# Set ZF to 1
+jne .bad_input		# if != 0 goto .bad_input (not taken)
+irmovq $32, %rax	# Should execute
+ret
+.bad_input:			# Should not execute, but if PIPE control logic is wrong, it will.
+ret
+	\end{lstlisting}
+	Since the PIPE processor always takes jumps, the last \texttt{ret} instruction would cause
+	the value 0 to be returned to the caller, but this instruction should be canceled
+	because the branch is actually not taken and the \texttt{irmovq} should execute
+	before returning. If the program behaves incorrectly, then \texttt{\%rax} will
+	have the value 0, when it should be 32.
+\end{sol}
+
 \end{document}
