@@ -1,0 +1,264 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 5: Optimizing Program Performance}
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{5.1}
+	The following problem illustrates the way memory aliasing can cause unexpected program
+	behavior. Consider the following procedure to swap to values:
+	\begin{lstlisting}
+/* Swap value x at xp with value y at yp */
+void swap(long *xp, long *yp)
+{
+	*xp = *xp + *yp;	/* x + y */
+	*yp = *xp - *yp;	/* x+y-y = x */
+	*xp = *xp - *yp;	/* x+y-x = y */
+}
+	\end{lstlisting}
+	If this procedure is called with \texttt{xp} equal to \texttt{yp}, what effect will it
+	have?
+\end{ex}
+
+\begin{sol}
+	\
+	If \texttt{xp} equals \texttt{yp}, meaning that the pointers hold the same memory address,
+	then the variables are aliased. The first expression sets \texttt{*xp} to \texttt{2 * x},
+	twice the original value of \texttt{x}. It also inadvertently changes \texttt{*yp} to
+	have value \texttt{2 * x}. Then, the next expression evaluates to 0, so \texttt{*yp}
+	and hence \texttt{*xp} is 0. The final expression sets \texttt{*xp} (and hence \texttt{*yp})
+	to \texttt{0 - 0}, or just \texttt{0}. Therefore, instead of swapping values, both values
+	are set to \texttt{0}.
+\end{sol}
+
+\begin{ex}{5.2}
+	Later in this chapter we will start with a single function and generate many different
+	variants that preserve the function's behavior, but with difference performance
+	characteristics. For three of these variants, we found that the run times (in clock
+	cycles) can be approximated by the following functions:
+	\begin{itemize}
+		\item Version 1: $60+35n$
+		\item Version 2: $136+4n$
+		\item Version 3: $157+1.25n$
+	\end{itemize}
+	For what values of $n$ would each version be the fastest of the three? Remember
+	that $n$ will always be an integer.
+\end{ex}
+
+\begin{sol}
+	\
+	When $n=0$, Version 1 has the smallest value: 60. That is, it requires the least cycles
+	per elements. Because it has the greatest slope, it will eventually surpass both
+	of the other versions in terms of required cycles. Version 1 will intersect Version 2
+	whe $60+35n=136+4n$, or $31n=76$, making $n$ about $2.45$. Since $n$ is an integer, this
+	means we require $n$ to be at least 3. Similarly, Version 1 and Version 3 intersect when
+	$60+35n=157+1.25n$. This means $33.75n=97$, so $n$ is about $2.87$, but once again
+	$n$ must be an integer so we require it to be 3. At this point, either Version 2 or
+	Version 3 is the fastest. These versions intersect when $136+4n=157+1.25n$, so
+	$2.75n=21$, meaning $n$ is about $7.6$. Version 2 hs a larger slope, so eventually its
+	slope will overcome that of Version 3,; this will happen when $n=8$. However, this means
+	that when $n$ is between 3 and 7 (inclusive), Version 2 will have less cycles per element.
+	
+	\
+	Therefore, when $n < 3$, Version 1 is the fastest, followed by Version 2 when 
+	$3\leq n < 7$, and lastly, Version 3 is the fastest when $n\geq 8$, requiring 1.25 cycles
+	per element.
+\end{sol}
+
+\begin{ex}{5.3}
+	Consider the following functions:
+	\begin{lstlisting}
+long min(long x, long y) { return x < y ? x : y; }
+long max(long x, long y) { return x < y ? y : x; }
+void incr(long *xp, long v) { *xp += v; }
+long square(long x) { return x*x; }
+	\end{lstlisting}
+	The following three code fragments call these functions:
+	\begin{enumerate}[label=(\alph*)]
+		\item \
+		\begin{lstlisting}
+for (i = min(x, y); i < max(x, y); incr(&i, 1)
+	t += square(i);
+		\end{lstlisting}
+		\item \
+		\begin{lstlisting}
+for (i = max(x, y) - 1; i >= min(x, y); incr(&i, -1))
+	t += square(i);
+		\end{lstlisting}
+		\item \
+		\begin{lstlisting}
+long low = min(x, y);
+long high = max(x, y);
+for (i = low; i < high; incr(&i, 1))
+	t += square(i);
+		\end{lstlisting}
+	\end{enumerate}
+	Assume \texttt{x} equals 10 and \texttt{y} equals 100. Fill int he following
+	table indicating the number of times each of the four functions is called
+	in code fragments A-C.
+	\begin{center}
+		\begin{tabular}{ccccc}
+			Code & \texttt{min} & \texttt{max} & \texttt{incr} & \texttt{square}\\
+			\hline
+			A & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			B & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			C & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{ccccc}
+			Code & \texttt{min} & \texttt{max} & \texttt{incr} & \texttt{square}\\
+			\hline
+			A & 1 & 91 & 90 & 90\\
+			
+			B & 91 & 1 & 90 & 90\\
+			
+			C & 1 & 1 & 90 & 90\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{5.4}
+	When we use \texttt{gcc} to compile \texttt{combine3} with command-line option \texttt{-O2},
+	we get code with substantially better CPE performance than with \texttt{-O1}:
+	\begin{center}
+		\begin{tabular}{ccccccc}
+			{} & {} & {} & \multicolumn{2}{c}{Integer} & \multicolumn{2}{c}{Floating point}\\
+			Function & Page & Method & \texttt{+} & \texttt{*} & \texttt{+} & \texttt{*}\\
+			\hline
+			\texttt{combine3} & 513 & Compiled \texttt{-O1} & 7.17 & 9.02 & 9.02 & 11.03\\
+			\texttt{combine3} & 513 & Compiled \texttt{-O2} & 1.60 & 3.01 & 3.01 & 5.01\\
+			\texttt{combine4} & 513 & Accumulate in temporary & 1.27 & 3.01 & 3.01 & 5.01\\
+		\end{tabular}
+	\end{center}
+	We achieve performance comparable to that of \texttt{combine4}, except for the case of
+	integer sum, but even it improves significantly. On examining the assembly code generated
+	by the compiler, we find an interesting variant of the inner loop:
+	\begin{lstlisting}[language={}]
+# Inner loop of combine3, data_t = double, OP = *. Compiled -O2
+# dest in %rbx, data+i in %rdx, data+length in %rax
+# Accumulated product in %xmm0
+.L22:								# loop:
+	vmulsd	(%rdx), %xmm0, %xmm0	#	Multiply product by data[i]
+	addq	$8, %rdx				# 	Increment data + i
+	cmpq	%rax, %rdx				#	Compare to data+length
+	vmovsd	%xmm0, (%rbx)			# 	Store product at dest
+	jne		.L22					#	If !=, goto loop
+	\end{lstlisting}
+	We can compare this to the version created with optimization level 1:
+		\begin{lstlisting}[language={}]
+# Inner loop of combine3, data_t = double, OP = *. Compiled -O1
+# dest in %rbx, data+i in %rdx, data+length in %rax
+.L17:								# loop:
+	vmovsd	(%rbx), %xmm0			#	Read product from dest
+	vmulsd	(%rdx), %xmm0, %xmm0	#	Multiply product by data[i]
+	vmovsd	%xmm0, (%rbx)			#	Store product at dest
+	addq	$8, %rdx				# 	Increment data + i
+	cmpq	%rax, %rdx				#	Compare to data+length
+	jne		.L22					#	If !=, goto loop
+	\end{lstlisting}
+	We see that, besides some reordering of instructions, the only difference is that the
+	more optimized version does not contain the \texttt{vmovsd} implementing the read from
+	the location designated by \texttt{dest} (line 2).
+	\begin{enumerate}[label=(\alph*)]
+		\item How does the role of register \texttt{\%xmm0} differ in these two loops?
+		\item Will the more optimized version faithfully implement the C code of \texttt{combine3},
+		including when there is memory aliasing between \texttt{dest} and the vector
+		\texttt{data}?
+		\item Either explain why this optimization preserves the desired behavior, or give an
+		example where it would produce different results than the less optimized code.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item In the version of \texttt{compare3} compiled with \texttt{-O2}, the \texttt{\%xmm0}
+		register holds the value accumulated so far. Since this value is used in the next iteration,
+		there is no need to read memory to obtain it; it can be directly used from \texttt{\%xmm0}.
+		This is in contrast with with the version of \texttt{compare3} compiled with \texttt{-O2},
+		where rather than reading the accumulated value from \texttt{\%xmm0}, it is read from
+		memory before operating on it.
+		\item Yes, the more optimized version faithfully implements \texttt{combine3}.
+		In both cases, the computed value is written to the destination every iteration.
+		\item The optimized version preserves the desired behavior by updating the destination
+		with the current value in \texttt{dest} in every iteration, rather than doing so
+		once at the end after the loop ends.
+	\end{enumerate}
+\end{sol}
+\end{document}
