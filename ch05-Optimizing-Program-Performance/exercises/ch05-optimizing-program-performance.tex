@@ -694,7 +694,7 @@ a in %rdi, i in %rax, cnt in %rdx
 
 \begin{sol}
 	\
-	The following is the code for \texttt{p\_sum1}:
+	The following is the code for \texttt{psum1}:
 	\begin{lstlisting}
 /* Compute prefix sum of vector a */
 void psum1(float a[], float p[], long n)
@@ -715,7 +715,7 @@ void psum1(float a[], float p[], long n)
 \end{sol}
 
 \begin{ex}{5.12}
-	Rewrite the code for \texttt{p\_sum1} (Figure 5.1) so that it does not need to
+	Rewrite the code for \texttt{psum1} (Figure 5.1) so that it does not need to
 	repeatedly retrieve the value of \texttt{p[i]} from memory. You do not need to use
 	loop unrolling. We measured the resulting code to have a CPE Of 3.00, limited by the
 	latency of the floating-point addition.
@@ -1016,5 +1016,109 @@ void inner4(vec_ptr u, vec_ptr v, data_t *dest)
 			$6\times 1a$ loop unrolling}
 		\label{fig:ex-05-16}
 	\end{figure}
+\end{sol}
+
+\begin{ex}{5.17}
+	The library function \texttt{memset} has the following prototype:
+	\begin{lstlisting}
+void *memset(void *s, int c, size_t n);
+	\end{lstlisting}
+	This function fills \texttt{n} bytes of the memory area starting at \texttt{s} with
+	copies of the low order byte of \texttt{c}. For example, it can be used to zero out
+	a region of memory by giving argument 0 for \texttt{c}, but other values are possible.
+	
+	\
+	The following is a straightforward implementation of \texttt{memset}:
+	\begin{lstlisting}
+/* Basic implementation of memset */
+void *basic_memset(void *s, int c, size_t n)
+{
+	size_t cnt = 0;
+	unsigned char *schar = s;
+	while (cnt < n) {
+		*schar++ = (unsigned char) c;
+		cnt++;
+	}
+	return s;
+}
+	\end{lstlisting}
+	Implement a more efficient version of the function by using a word of data type
+	\texttt{unsigned long} to pack eight copies of \texttt{c}, and then step through
+	the region using word-level writes. You might find it helpful to do additional loop
+	unrolling as well. On our reference machine, we were able to reduce the CPE from
+	1.00 for the straightforward implementation to 0.127. That is, the program is able to
+	write 8 bytes every clock cycle.
+	
+	\
+	Here are some additional guidelines. To ensure portability, let $K$ denote the value
+	of \texttt{sizeof(unsigned long)} for the machine on which you run your program.
+	
+	\begin{itemize}
+		\item You may not call any library functions.
+		\item Your code should work for arbitrary values of \texttt{n}, including when it is
+		not a multiple of $K$. You can do this in a manner similar to the way we finish the
+		last few iterations with loop unrolling.
+		\item You should write your code so that it will compile and run correctly on any
+		machine regardless of the value of $K$. Make use of the operation \texttt{sizeof}
+		to do this.
+		\item On some machines, unaligned writes can be much slower than aligned ones. (On
+		some non-x86 machines, they can even cause segmentation faults.) Write your code so
+		that it starts with byte-level writes until the destination address is a multiple
+		of $K$, then do word-level writes, and then (if necessary) finish with byte-level
+		writes.
+		\item Beware of the case where \texttt{cnt} is small enough that the upper bounds on
+		some of the loops become negative. With expressions involving the \texttt{sizeof}
+		operator, the testing may be performed with unsigned arithmetic. (See Section 2.28
+		and Problem 2.72.)
+	\end{itemize}
+\end{ex}
+
+\begin{sol}
+	\
+	My implementation is below. I included the \texttt{basic\_memset} in the source file
+	so I could test my results against it. I used a \texttt{\#define} directive to save
+	the length of \texttt{unsigned long} in bytes into a constant \texttt{K}. Then I
+	ANDed the address provided by the client with \texttt{K-1} to detect them necessary
+	number of iterations to before I would the address aligned on a $K$-byte boundary.
+	I replicated the least significant byte of \texttt{c} across a word \texttt{cLSBword}
+	via repeated shifting and bit-level OR. Before computing the limit to do word-level writes,
+	I was careful to compare \texttt{n - cnt} with \texttt{K} so as to avoid getting a large
+	positive number. Then the rest of the method was treated as a $K\times 1$ loop unrolling. 
+	\lstinputlisting{17-memset/memset.c}
+\end{sol}
+
+\begin{ex}{5.18}
+	We considered the task of polynomial evaluation in Practice Problem 5.5 and 5.6, with both
+	a direct evaluation and an evaluation by Horner's method. Try to write faster versions of
+	the function using the optimization techniques we have explored, including loop unrolling,
+	parallel accumulation, and reassociation. You will find many different ways of mixing
+	together Horner's scheme and direct evaluation with these optimization techniques.
+	
+	\
+	Ideally, you should be able to reach a CPE close to the throughput limit of your machine.
+	Our best version achieves a CPE of 1.07 on our reference machine.
+	\[
+	a_0 + x(a_1 + x(a_2 + x a_3))
+	\]
+	\begin{align*}
+		a_0+a_1x+a_2x^2+a_3x^3 + a_4x^4 + a_5 x^5\\
+		(a_0 + a_1x) + (a_2 + a_3x) x^2 + (a_4 + a_5x)x^4
+	\end{align*}
+\end{ex}
+ 
+
+\begin{sol}
+	\
+	I implemented $10\times 10$ loop unrolling in a procedure I called \texttt{poly\_roll} and
+	attained about a factor of 3 improvement over the \texttt{poly} procedure on Practice Problem
+	5.5. I tried thinking of how to use Horner's method but I was unable to find a way to eliminate
+	the dependency chain with the \texttt{result} variable, which is what limited the
+	implementation of \texttt{polyh} on Practice Problem 5.6. I came across someone else's
+	implementation where they did factoring and a form of reassociation with which yielded better
+	results. I would call this $9\times 3a$, since the unrolling factor is $9$, there are 3
+	accumulators, and there is some reassociation. I seemed to get a factor of about $3.8$
+	improvement with this version. See the snippet below, also found in
+	\texttt{18-polynomial-evaluation/evalpoly.c}:
+	\lstinputlisting{18-polynomial-evaluation/evalpoly.c}
 \end{sol}
 \end{document}
