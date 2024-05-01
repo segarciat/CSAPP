@@ -1,0 +1,371 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 6: The Memory Hierarchy}
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{6.1}
+	In the following, let $r$ be the number of rows in a DRAM array, $c$ the number of columns,
+	$b_r$ the number of bits needed to address the rows, and $b_c$ the number of bits needed to
+	address the columns. For each of the following DRAMs, determine the power-of-2 array dimensions
+	that minimize $\max(b_r, b_c)$, the maximum number of bits needed to address the rows or
+	columns of the array.
+	\begin{center}
+		\begin{tabular}{cccccc}
+			Organization & $r$ & $c$ & $b_r$ & $b_c$ & $\max(b_r, b_c)$\\
+			\hline
+			$16\times 1$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			$16\times 4$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			$128\times 8$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			$512\times 4$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			$1024\times 4$ & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The notation $16\times 1$ means $d=16$ supercells, each of width $w=1$ bit. The number
+	of rows $r$ and columns $c$ must satisfy $rc=d=16$. Since $16$ is a perfect square,
+	the minimum is given when we pick the square root, so $r=c=4$. Meanwhile, $d=128$
+	is not a perfect square, and we must pick either $r=8$ and $c=16$, or $r=16$ and $c=8$.
+	For $d=512$, we can pick $r=32$ and $d=16$, and for $d=1024$, we can pick $r=d=32$.
+	\begin{center}
+		\begin{tabular}{cccccc}
+			Organization & $r$ & $c$ & $b_r$ & $b_c$ & $\max(b_r, b_c)$\\
+			\hline
+			$16\times 1$ & $4$ & $4$ & $2$ & $2$ & $2$ \\
+			$16\times 4$ & $4$ & $4$ & $2$ & $2$ & $2$ \\
+			$128\times 8$ & $16$ & $8$ & $4$ & $3$ & $4$\\
+			$512\times 4$ & $32$ & $16$ & $5$ & $4$ & $5$\\
+			$1024\times 4$ & $32$ & $32$ & $5$ & $5$ & $5$\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{6.2}
+	What is the capacity of a disk with 2 platters, $10,000$ cylinders, an average of
+	400 sectors per track, and 512 bytes per sector?
+\end{ex}
+
+\begin{sol}
+	\
+	According Section 6.12, page 592, the capacity of a rotating disk is given by
+	\[
+	\text{Capacity} = \frac{\#\text{ bytes}}{\text{sector}}
+	\times \frac{\text{average \# sectors}}{\text{track}}
+	\times \frac{\text{average \# tracks}}{\text{surface}}
+	\times \frac{\#\text{ surfaces}}{\text{platter}}
+	\times \frac{\#\text{ platters}}{\text{disk}}
+	\]
+	Recall that a cylinder is the collection of tracks on all the surfaces that are equidistant
+	from the center of the spindle. Since the disk has 10,000 cylinders, this means there's an
+	average of 10,000 tracks per surface. Therefore the capacity is:
+	\begin{align}
+		\text{Capacity}&= \frac{512 \text{ bytes}}{\text{sector}}
+		\times \frac{400 \text{ sectors}}{\text{track}}
+		\times \frac{10,000\text{ tracks}}{\text{surface}}
+		\times \frac{2 \text{ surfaces}}{\text{platter}}
+		\times \frac{2 \text{ platters}}{\text{disk}}\\
+		&=8.192\times 10^{9}\text{ bytes}\\
+		&=8.192\text{ GB}
+	\end{align}
+\end{sol}
+
+\begin{ex}{6.3}
+	Estimate the average time (in ms) to access a sector on the following disk:
+	\begin{center}
+		\begin{tabular}{ll}
+			Parameter & Value\\
+			\hline
+			Rotational Rate & 15,000 RPM\\
+			$T_{\text{avg seek}}$ & 8 ms\\
+			Average number of sectors/track & 500
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	The average time to access a sector on a disk is the sum of the seek time, the rotational
+	latency, and the transfer time. The seek time is how long it takes the actuator arm on
+	a hard disk to move to the track that contains the target sector. The rotational latency
+	is how long the drive waits for the first bit of the sector to pass under the head of
+	the actuator arm. The transfer time is how long it takes to read the contents of the sector.
+	
+	\
+	The average rotational latency is given by half of the maximum rotational latency,
+	which in turn is given by:
+	\[
+	T_{\text{max rotation}}=\frac{1}{\text{RPM}}\times \frac{60 \text{ secs}}{\text{min}}
+	\]
+	Therefore,
+	\[
+	T_{\text{avg rotation}}=\frac{1}{2}\times \frac{1 \text{ minute}}{15000 \text{ rotations}}
+	\times \frac{60 \text{ secs}}{\text{min}}
+	\times \frac{1000 \text{ ms}}{\text{second}}
+	=2\text{ ms}
+	\]
+	Meanwhile, the average transfer time is given by
+	\begin{align*}
+	T_{\text{avg transfer}}
+	&=\frac{1}{\text{RPM}}\times \frac{1}{\text{average \# sectors/track}}
+	\times \frac{60\text{ secs}}{\text{min}}\\
+	&=\frac{\text{minute}}{15,000 \text{ rotations}}
+	\times \frac{1}{500 \text{ sectors/track}}
+	\times \frac{60 \text{ secs}}{\text{min}}
+	\times \frac{1000 \text{ ms}}{\text{second}}\\
+	&=0.008\text{ ms}
+	\end{align*}
+
+	Therefore we have, the average access time is about
+	$T_{\text{access}}=8\text{ ms}+2\text{ ms}+0.008\text{ ms}=10.008\text{ ms}$.
+\end{sol}
+
+\begin{ex}{6.4}
+	Suppose that a 1 MB file consisting of 512-byte logical blocks is stored on a disk drive with
+	the following characteristics:
+	\begin{center}
+		\begin{tabular}{ll}
+			Parameter & Value\\
+			\hline
+			Rotational rate & 10,000 RPM\\
+			$T_{\text{avg seek}}$ & 5 ms\\
+			Average number of sectors/track & 1,000\\
+			Surfaces & 4\\
+			Sector size & 512 bytes
+		\end{tabular}
+	\end{center}
+	For each case below, suppose that a program reads the logical blocks of the file sequentially,
+	one after the other, and that the time to position the head over the first block is
+	$T_{\text{avg seek}} + T_{\text{avg rotation}}$.
+	\begin{enumerate}[label=(\alph*)]
+		\item \emph{Best case}: Estimate the optimal time (in ms) required to read the file given
+		the best possible mapping of logical blocks to disk sectors (i.e., sequential).
+		\item \emph{Random case}: Estimate the time (in ms) required to read the file if blocks
+		are mapped randomly to disk sectors.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item
+		\item 1 MB is equivalent to 1000 KB, so with a logical block size of 512 bytes, it will
+		take up about 2000 logical blocks on disk. Since the size of a block equals the size of a
+		sector, and there are 1000 tracks per sector on average for the given disk, this means
+		that a sector can hold about 1000 blocks. In the best case, the data for the file is
+		mapped onto 2 tracks on two surfaces on the same platter with the increasing order of the logical blocks matching that of the sector. After the initial delay of
+		$T_{\text{avg seek}} + T_{\text{avg rotation}}$ to place the head on the first block, it
+		will take about $T_{\text{avg transfer}}$ to transfer all bytes in the sector, and about
+		$\frac{1}{1000}T_{\text{max rotation}}$ to get to the next sector (logical block) on the
+		same track to continue. These latter two steps are performed 1000 times per track. Since
+		the two surfaces are on the same platter, the head is already in place to start
+		transferring the data from the second surface. Therefore, the optimal time would be about:
+		\begin{align*}
+		T_{\text{access, optimal}}
+		&=T_{\text{avg seek}} + T_{\text{avg rotation}}
+		+2\cdot 1000\cdot T_{\text{avg transfer}}\\
+		&=T_{\text{avg seek}} + T_{\text{max rotation}} + 2000\cdot T_{\text{avg transfer}}
+		\end{align*}
+		
+		The maximum rotational latency for the given disk is about
+		\begin{align*}
+			T_{\text{maximum rotation}}
+			=
+			\times \frac{1 \text{ minute}}{10000 \text{ rotations}}
+			\times \frac{60 \text{ secs}}{\text{min}}
+			\times \frac{1000 \text{ ms}}{\text{second}}
+			=6\text{ ms}
+		\end{align*}
+		The average transfer latency is about
+		\begin{align*}
+			T_{\text{avg transfer}}
+			&=\frac{\text{minute}}{10,000 \text{ rotations}}
+			\times \frac{1}{1,000 \text{ sectors/track}}
+			\times \frac{60 \text{ secs}}{\text{min}}
+			\times \frac{1000 \text{ ms}}{\text{second}}\\
+			&=0.006\text{ ms}
+		\end{align*}
+		Altogether, the optimal access time is about
+		\begin{align*}
+			T_{\text{access, optimal}}
+			&=5\text{ ms} + \frac{1}{2} \cdot 6 \text{ ms} + 2000\cdot 0.006\text{ ms}\\
+			&=20\text{ ms}
+		\end{align*}
+		\item For a random case, we may not have contiguous blocks for the file. The 2000
+		blocks for the file may be split evenly among all 4 surfaces, meaning there is about
+		500 blocks per surface. If each block is on a different track, it may take about
+		\begin{align*}
+			T_{\text{access, avg}}&=
+			2000\times \left( T_{\text{avg seek}} + T_{\text{avg rotation}} + T_{\text{avg
+					transfer}} + T_{\text{access}}\right)\\
+			&=2000\times (5 + \text{ ms} + 3 \text{ ms} + 0.006\text{ ms})\\
+			&=16012\text{ ms}\\
+			&\approx 16 \text{ seconds}
+		\end{align*}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{6.5}
+	As we have seen, a potential drawback of SSDs is that the underlying flash memory
+	can wear out. For example, for the SSD in Figure 6.14 (shown below), Intel guarantees
+	about 12 petabytes ($128\times 10^{15}$ bytes) of writes before the drive wears out:
+	\begin{center}
+		\begin{tabular}{ll|ll}
+			\hline
+			\multicolumn{2}{c}{Reads} &  \multicolumn{2}{c}{Writes}\\
+			\hline
+			Sequential read throughput & 550 MB/s
+			& Sequential write throughput & 470 MB/s\\
+			
+			Random read throughput (IOPS) & 89,000 IOPS
+			& Random write throughput (IOPS) & 74,000 IOPS\\
+			
+			Random read throughput (MB/s) & 365 MB/s
+			& Random write throughput (MB/s) & 303 MB/s\\
+			
+			Avg. sequential read access time & 50 $\mu$s
+			& Avg. sequential write access time & 60 $\mu$s\\
+			\hline
+		\end{tabular}
+	\end{center}
+	
+	Given this assumption, estimate the lifetime (in years) of this SSD for the following	
+	workloads:
+	\begin{enumerate}[label=(\alph*)]
+		\item \emph{Worst case for sequential writes}: The SSD is written to continuously
+		at a rate of 470 MB/s (the average sequential write throughput of the device).
+		\item \emph{Worst case for random writes}: The SSD is written continuously at a
+		rate of 303 MB/s (the average random write throughput of the device).
+		\item \emph{Average case}: The SSD is written to at a rate of 20 GB/day (the
+		average daily write rate assumed by some computer manufacturers in their mobile
+		computer workload simulations).
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item It would take
+		\begin{align*}
+			T_{\text{worst seq. writes}}&=
+			128\times 10^{15}\text{ bytes}
+			\cdot \frac{1 \text{ MB}}{10^6 \text{ bytes}}
+			\cdot \frac{1 \text{ second}}{470 \text{ MB}}
+			\cdot \frac{1 \text{ day}}{86400 \text{ seconds}}
+			\cdot \frac{1 \text{ year}}{365 \text{ days}}\\
+			&\approx 8.63 \text{ years}
+		\end{align*}
+		\item 
+		\begin{align*}
+			T_{\text{worst ran. writes}}&=
+			128\times 10^{15}\text{ bytes}
+			\cdot \frac{1 \text{ MB}}{10^6 \text{ bytes}}
+			\cdot \frac{1 \text{ second}}{303 \text{ MB}}
+			\cdot \frac{1 \text{ day}}{86400 \text{ seconds}}
+			\cdot \frac{1 \text{ year}}{365 \text{ days}}\\
+			&\approx 13.4 \text{ years}
+		\end{align*}
+		\item 
+		\begin{align*}
+			T_{\text{avg}}&=
+			128\times 10^{15}\text{ bytes}
+			\cdot \frac{1 \text{ GB}}{10^9 \text{ bytes}}
+			\cdot \frac{1 \text{ day}}{20 \text{ GB}}
+			\cdot \frac{1 \text{ year}}{365 \text{ days}}\\
+			&\approx 17534 \text{ years}
+		\end{align*}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{6.6}
+	Using the data from the years 2005 to 2015 in Figure 6.15(c) on page 603, estimate the
+	year when you will be able to buy a petabyte ($10^{15}$ bytes) of rotating disk storage
+	for $\$500$ bytes. Assume actual dollars (no inflation).
+\end{ex}
+
+\begin{sol}
+	\
+	Expressed in dollars per GB, the cost would be
+	\begin{align*}
+		&\frac{\$500}{10^{15}\text{ bytes}}
+		\cdot \frac{10^{9} \text{ byte}}{1 \text{ GB}}
+		=\frac{\$0.0005}{\text{GB}}
+	\end{align*}
+	According to the table, the price for rotating disk storage in dollars per GB
+	for the years 2005, 2010, and 2015 were \$5/GB, \$0.3/GB, and \$0.03/GB,
+	indicating a decrease by a factor between 10 and 16.67. It would therefore
+	take at least 5 years but no more than 10 years, so around 2025.
+\end{sol}
+
+\end{document}
