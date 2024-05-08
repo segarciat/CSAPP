@@ -1,0 +1,276 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 7: Linking}
+
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{7.1}
+	This practice problem concerns the \texttt{m.o} and \texttt{swap.o} modules below:
+	\begin{lstlisting}
+/* m.c */
+void swap();
+
+int buf[2] = {1, 2};
+
+int main()
+{
+	swap();
+	return 0;
+}
+	\end{lstlisting}
+	\begin{lstlisting}
+/* swap.c */
+extern int buf[];
+
+int *bufp0 = &buf[0];
+int *bufp1;
+
+void swap()
+{
+	int temp;
+	
+	bufp1 = &buf[1];
+	temp = *bufp0;
+	*bufp0 = *bufp1;
+	*bufp1 = temp;
+}
+	\end{lstlisting}
+	For each symbol defined or referenced in \texttt{swap.o}, indicate whether or not it will have a symbol
+	table entry in the \texttt{.symtab} section in module \texttt{swap.o}. If so, indicate the module that
+	defines the symbol (\texttt{swap.o} or \texttt{m.o}), the symbol type (local, global, or extern),
+	and the section (\texttt{.text}, \texttt{.data}, \texttt{.bss}, or COMMON) it is assigned to
+	in the module.
+\end{ex}
+
+\begin{sol}
+	\
+	The \texttt{buf} symbol references a global symbol defined in \texttt{m.o}, so it will have
+	a symbol table entry. The symbol will have an entry in \texttt{.symtab}, which
+	has information about functions and global variables defined and referenced in the program.
+	The variable is initialized, so it will be in the \texttt{.data} segment.
+	
+	\
+	The \texttt{bufp0} symbol is defined in \texttt{swap.o}. It a global symbol that can be referenced
+	in other modules because it does not use the \texttt{static} keyword. Since it is initialized, it
+	belongs to the \texttt{.data} section, used for global and static C variables. It bears
+	an entry on \texttt{.symtab}.
+	
+	\
+	The \texttt{bufp1} symbol defines a global variable, so it will have entry in \texttt{.symtab}.
+	Since it is uninitialized, it will be in the \texttt{COMMON} section, and not in the \texttt{.bss}
+	section because it is not explicitly initialized to 0. The symbol is defined in \texttt{swap.o}.
+	
+	\
+	The \texttt{swap} symbol is a nonstatic function so it is global; it bears a symbol
+	on \texttt{.symtab}. Since it references a global variable, it will need to be modified
+	later by the linker, so it is in the \texttt{.rel .text} section.
+	
+	\
+	Finally, the \texttt{temp} variable is a nonstatic local variable managed by the stack, so it
+	will not bear an entry on \texttt{.symtab}.
+	\begin{center}
+		\begin{tabular}{ccccc}
+			Symbol & \texttt{.symtab} entry? & Symbol type & Module where defined & Section\\
+			\hline
+			\texttt{buf} & Yes & External & \texttt{m.o} & \texttt{.data}\\
+			
+			\texttt{bufp0} & Yes & Global & \texttt{swap.o} & \texttt{.data}\\
+			
+			\texttt{bufp1} & Yes & Global & \texttt{swap.o} & \texttt{.bss} \\
+			
+			\texttt{swap} & Yes & Global & \texttt{swap.o} & \texttt{.text}\\
+			
+			\texttt{temp} & No & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{7.2}
+	In this problem, let \texttt{REF(x.i)} $\to$ \texttt{DEF(x.k)} denote that the linker will associate
+	an arbitrary reference to symbol \texttt{x} in module \texttt{i} to the definition of \texttt{x}
+	in module \texttt{k}. For each example that follows, use this notation to indicate how the linker
+	would resolve references to the multiply-defined symbol in each module. If there is a link-time
+	error (rule 1), write ``ERROR". If the linker arbitrarily chooses one of the definitions (rule 3),
+	write ``UNKNOWN".
+	\begin{enumerate}[label=(\alph*)]
+		\item \begin{lstlisting}
+/* Module 1 */
+int main()
+{
+}
+
+/* Module 2 */
+int main;
+int p2()
+{
+}
+		\end{lstlisting}
+		(a) \texttt{REF(main.1)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill})
+		
+		(b) \texttt{REF(main.2)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill})
+		\item \begin{lstlisting}
+/* Module 1 */
+void main()
+{
+}
+
+/* Module 2 */
+int main = 1;
+int p2()
+{
+}
+		\end{lstlisting}
+		(a) \texttt{REF(main.1)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill})
+		
+		(b) \texttt{REF(main.2)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill})
+		\item \begin{lstlisting}
+/* Module 1 */
+int x;
+void main()
+{
+}
+
+/* Module 2 */
+int main = 1;
+int p2()
+{
+}
+		\end{lstlisting}
+		(a) \texttt{REF(x.1)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill})
+		
+		(b) \texttt{REF(x.2)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill})
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Since the \texttt{main} function is a global function, it is a strong symbol.
+		Meanwhile, \texttt{main} in the second file is a weak symbol because it is an uninitialized
+		global variable.
+		
+		(a) \texttt{REF(main.1)} $\to$ \texttt{DEF(main.1)}
+		
+		(b) \texttt{REF(main.2)} $\to$ \texttt{DEF(main.1)}
+		\item The \texttt{main()} function in module 1 is a global function so it is a strong
+		symbol. The \texttt{main} variable in module 2 is an initialized global variable, also
+		a global symbol. Thus, there is a linker error.
+		
+		\item Both instances of the \texttt{x} symbol are global, but the one in module 1 is
+		a weak symbol because it is uninitialized, whereas the one in module 2 is strong because it
+		is initialized.
+		
+		(a) \texttt{REF(x.1)} $\to$ \texttt{DEF(x.2)}
+		
+		(b) \texttt{REF(x.2)} $\to$ \texttt{DEF(x.2)}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{7.3}
+	Let \texttt{a} and \texttt{b} denote object modules or static libraries in the current directory,
+	and let \texttt{a} $\to$ \texttt{b} denote that \texttt{a} depends on \texttt{b}, in the sense that
+	\texttt{b} defines a symbol that is referenced by \texttt{a}. For each of the following scenarios,
+	show the minimal command line (i.e., one with the least number of object file and library
+	arguments) that allow the static linker to resolve all symbol references.
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{p.o} $\to$ \texttt{libx.a}
+		\item \texttt{p.o} $\to$ \texttt{libx.a} $\to$ \texttt{liby.a}
+		\item \texttt{p.o} $\to$ \texttt{libx.a} $\to$ \texttt{liby.a}
+		\emph{and}
+		\texttt{liby.a} $\to$ \texttt{libx.a} $\to$ \texttt{p.o}
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The linker always adds an object file to the set of file that will be merged into
+		the executable. Since \texttt{p.o} depends on \texttt{libx.a}, it must precede it. The
+		command is: \texttt{gcc p.o libx.a}
+		\item This is similar to before: \texttt{gcc p.o libx.a liby.a}
+		\item The seemingly circular dependency poses no problem. As explained in (a), when the
+		linker adds any object file to the set of files that will be merged to form the executable.
+		The chain dependency means that \texttt{p.o}, \texttt{libx.a}, and \texttt{lib.y} must follow
+		in that order. The symbols used by \texttt{p.o} that are found in the object files concatenated
+		in the \texttt{libx.a} static library will be added to the set of files that will be part of
+		the executable object file. Since \texttt{liby.a} depends on \texttt{libx.a}, we must list
+		\texttt{libx.a} again so that the object file containing the symbols referenced in \texttt{liby.a}
+		also become part of the executable. We do not have to add \texttt{p.o} again because it is
+		an object file, which is already saved in the set of object files by the linker.
+		
+		\
+		The command is: \texttt{gcc p.o libx.a liby.a libx.a}
+	\end{enumerate}
+\end{sol}
+\end{document}
