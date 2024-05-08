@@ -273,4 +273,529 @@ int p2()
 		The command is: \texttt{gcc p.o libx.a liby.a libx.a}
 	\end{enumerate}
 \end{sol}
+
+\begin{ex}{7.4}
+	This problem concerns the relocated program in Figure 7.12(a).
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the hex address of the relocated reference to \texttt{sum} in line 5?
+		\item What is the hex value of the relocated reference to \texttt{sum} in line 5?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The instruction on line 5 has address \texttt{0x4004de}, which is the address
+		and the instruction there is \texttt{e8 05 00 00 00}. As indicated in the annotation
+		on the figure, this corresponds to the \texttt{callq 4004e8 <sum>} instruction, where
+		\texttt{e8} is the opcode, and \texttt{05 00 00 00} is the 32-bit PC-relative address
+		to the \texttt{sum} procedure. Since the 1-byte instruction \texttt{e8} is at \texttt{0x4004de},
+		the relative reference of \texttt{sum} is 1 byte later, at \texttt{0x4004df}.
+		
+		\item The hex value of the relocated reference to \texttt{sum} is \texttt{0x5},
+		which is relative to the instruction following the \texttt{callq} instruction.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{7.5}
+	Consider the call to function \texttt{swap} in object file \texttt{m.o} (Figure 7.5)
+	\begin{lstlisting}[language={}]
+9: e8 00 00 00 00		callq e <main+0xe>		swap()
+	\end{lstlisting}
+	with the following relocation entry:
+	\begin{lstlisting}[language={}]
+r.offset = 0xa
+r.symbol = swap
+r.type = R_X86_64_PC32
+r.addend = -4
+	\end{lstlisting}
+	Now suppose that the linker relocates \texttt{.text} in \texttt{m.o} to address \texttt{0x4004d0} and
+	\texttt{swap} to address \texttt{0x4004e8}. Then what is the value of the relocated reference to
+	\texttt{swap} in the \texttt{callq} instruction?
+\end{ex}
+
+\begin{sol}
+	\
+	First we compute the address of the relocated reference:
+	\begin{lstlisting}[language={}]
+ADDR(s) = ADDR(.text) = 0x4004d0
+refaddr =	ADDR(s) + r.offset
+		=	0x4004d0 + 0xa
+		=	0x4004da	
+	\end{lstlisting}
+	Then we update the value of the relocated reference:
+	\begin{lstlisting}[language={}]
+*refptr = (unsigned) (ADDR(r.symbol) + r.addend - refaddr)
+		= (unsigned) (0x4004e8 + (-4) - 0x4004da)
+		= 0xa
+	\end{lstlisting}
+	Therefore after relocation the call would be:
+	\begin{lstlisting}[language={}]
+0x4004d9: e8 0a 00 00 00:		callq 0x4004e8 <swap>
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{7.6}
+	This problem concerns the \texttt{m.o} module from Figure 7.5:
+	\begin{lstlisting}
+/* m.c */
+void swap();
+
+int buf[2] = {1, 2};
+
+int main()
+{
+	swap();
+	return 0;
+}
+	\end{lstlisting}
+	and the following version of the \texttt{swap.c} function that counts the number of times it has been
+	called:
+	\begin{lstlisting}
+extern int buf[];
+
+int *bufp0 = &buf[0];
+static int *bufp1;
+
+static void incr()
+{
+	static int count = 0;
+	
+	count++;
+}
+
+void swap()
+{
+	int temp;
+	
+	incr();
+	bufp1 = &buf[1];
+	temp = *bufp0;
+	*bufp0 = *bufp1;
+	*bufp1 = temp;
+}
+	\end{lstlisting}
+	For each symbol that is defined and referenced in \texttt{swap.o}, indicate if it will have a symbol
+	table entry in the \texttt{.symtab} section in module \texttt{swap.o}. If so, indicate the module that
+	defines the symbol (\texttt{swap.o} or \texttt{m.o}), the symbol type (local, global, or extern),
+	and the section (\texttt{.text}, \texttt{.data}, or \texttt{.bss}) it occupies in that module.
+\end{ex}
+
+\begin{sol}
+	\
+	
+	The \texttt{buf} symbol is an external global symbol referenced in the \texttt{swap.o} object module,
+	so it will have a symbol in \texttt{.symtab}. It is defined in the \texttt{main.o} module
+	as a global variable, and since it is initialized, it will occupy the \texttt{.data} section.
+	
+	\
+	The \texttt{bufp0} symbol is a global symbol defined in the \texttt{swap.o} module, so it will
+	have a symbol in \texttt{.symtab}. It is initialized, so it belongs to the \texttt{.data} section.
+	
+	\
+	\texttt{bufp1} is a local symbol defined \texttt{swap.o} because it appears in the top-level scope
+	with a \texttt{static} modifier. It does have an entry in \texttt{.symtab}. It is uninitialized,
+	so it belongs to the \texttt{.bss} section.
+	
+	\
+	\texttt{swap} is a global symbol defined in\texttt{swap.o}, and will have a \texttt{.symtab} entry.
+	It is in the \texttt{.text} section.
+	
+	\
+	\texttt{temp} does not have a symbol table entry because it is local to the \texttt{swap} function.
+	Local variables are part of the runtime stack.
+	
+	\
+	\texttt{incr} is a local symbol because it is defined at the outer scope with the \texttt{static}
+	keyword. It is defined in \texttt{swap.o}, will occupy the \texttt{.text} section, and will
+	have an entry in \texttt{.symtab}.
+	
+	\
+	The \texttt{count} variable is declared with \texttt{static} inside the local \texttt{incr} procedure.
+	Since it is initialized, it is placed in \texttt{.bss}, and will have a symbol in \texttt{.symtab}.
+	\begin{center}
+		\begin{tabular}{ccccc}
+			Symbol & \texttt{swap.o .symtab} entry? & Symbol type & Module where defined & Section\\
+			\hline
+			
+			\texttt{buf} & Yes & External & \texttt{m.o} & \texttt{.data}\\
+			
+			\texttt{bufp0} & Yes & Global & \texttt{swap.o} & \texttt{.data} \\
+			
+			\texttt{bufp1} & Yes & Local & \texttt{swap.o} & \texttt{.bss}\\
+			
+			\texttt{swap} & Yes & Global & \texttt{swap.o} & \texttt{.text}\\
+			
+			\texttt{temp} & No & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			
+			\texttt{incr} & Yes & Local & \texttt{swap.o} & \texttt{.text}\\
+			
+			\texttt{count} & Yes & Local & \texttt{swap.o} & \texttt{.bss}
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{7.7}
+	Without changing any variable names, modify \texttt{bar5.c} on page 683 so that \texttt{foo5.c}
+	prints the correct values of \texttt{x} and \texttt{y} (i.e., the hex representation of integers
+	15213 and 15212):
+	\begin{lstlisting}
+/* foo5.c */
+#include <stdio.h>
+void f(void);
+
+int y = 15212;
+int x = 15213;
+
+int main()
+{
+	f();
+	printf("x = 0x%x y = 0x%x \n",
+			x, y);
+	return 0;
+}
+	\end{lstlisting}
+	\begin{lstlisting}
+/* bar5.c */
+double x;
+
+void f()
+{
+	x = -0.0;
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The problem is that \texttt{double x} in \texttt{bar5.c} is a weak symbol, it being global and
+	uninitialized, whereas \texttt{int x = 15213;} defines a strong symbol. When the linker encounters
+	these, it will prefer the strong definition. Thus when \texttt{bar5.c} refers to \texttt{x}, it
+	will use the one at the address defined by \texttt{foo5.c}. Since \texttt{x} and \texttt{y}
+	are contiguous, assigning the 8-byte \texttt{double} with value \texttt{-0.0} to \texttt{x}
+	causes the initial 4 bytes of \texttt{x} as well as the 4 bytes of \texttt{y} to be overwritten.
+	
+	\
+	We cannot make \texttt{double x} a strong symbol ion \texttt{bar5.c} while it is strong symbol in
+	\texttt{foo5.c}, because the linker does not allow this and would output an error. To prevent
+	the problem, we can make \texttt{double x} local to \texttt{bar5.c} by using the \texttt{static} modifier:
+	\begin{lstlisting}
+/* bar5.c, modified */
+static double x;
+
+void f()
+{
+	x = -0.0;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{7.8}
+	In this problem, let \texttt{REF(x.y)} $\to$ \texttt{DEF(x.k)} denote that the linker will associate
+	an arbitrary reference to symbol \texttt{x} in module \texttt{i} to the definition of \texttt{x} in
+	module \texttt{k}. For each example below, use this notation to indicate how the linker would resolve
+	references to the multiply-defined symbol in each module. If there is a link-time error (rule 1), write
+	``ERROR". If the linker arbitrarily chooses one of the definitions (rule 3), write ``UNKNOWN".
+	\begin{enumerate}[label=(\alph*)]
+		\item 
+		\begin{lstlisting}
+/* Module 1 */
+int main()
+{
+}
+		\end{lstlisting}
+		\begin{lstlisting}
+/* Module 2 */
+static int main = 1;
+int p2()
+{
+}
+		\end{lstlisting}
+		(a) \texttt{REF(main.1)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill}.\makebox[1cm]{\hrulefill})
+		
+		(b) \texttt{REF(main.2)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill}.\makebox[1cm]{\hrulefill})
+		\item 
+		\begin{lstlisting}
+/* Module 1 */
+int x;
+int main()
+{
+}
+		\end{lstlisting}
+		\begin{lstlisting}
+/* Module 2 */
+double x;
+int p2()
+{
+}
+		\end{lstlisting}
+		(a) \texttt{REF(x.1)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill}.\makebox[1cm]{\hrulefill})
+	
+		(b) \texttt{REF(x.2)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill}.\makebox[1cm]{\hrulefill})
+		\item 
+		\begin{lstlisting}
+/* Module 1 */
+int x = 1;
+int main()
+{
+}
+		\end{lstlisting}
+		\begin{lstlisting}
+/* Module 2 */
+double x = 1.0;
+int p2()
+{
+}
+		\end{lstlisting}
+		(a) \texttt{REF(x.1)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill}.\makebox[1cm]{\hrulefill})
+		
+		(b) \texttt{REF(x.2)} $\to$ \texttt{DEF}(\makebox[1cm]{\hrulefill}.\makebox[1cm]{\hrulefill})
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The \texttt{main} symbol is global in module 1; in module 2, a local symbol \texttt{main}
+		is defined as well. There is no conflict.
+		
+		(a) \texttt{REF(main.1)} $\to$ \texttt{DEF(main.1)}
+		
+		(b) \texttt{REF(main.2)} $\to$ \texttt{DEF(main.2)}
+		
+		\item Both modules defined the \texttt{x} symbol weakly, so the linker uses rule 3 to choose any of
+		the symbols. It is not a compiler error, but it is ambiguous.
+		(a) \texttt{REF(x.1)} $\to$ \texttt{DEF(UNKNOWN)}
+		
+		(b) \texttt{REF(x.2)} $\to$ \texttt{DEF(UNKNOWN)}
+		
+		\item Both modules define \texttt{x} as a strong symbol, which leads to a compiler error.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{7.9}
+	Consider the following program, which consists of two object modules:
+	\begin{lstlisting}
+/* foo6.c */
+void p2(void);
+
+int main()
+{
+	p2();
+	return 0;
+}
+
+/* bar6.c */
+#include <stdio.h>
+
+char main;
+
+void p2()
+{
+	printf("0x%x\n", main);
+}
+	\end{lstlisting}
+	When this program is compiled and executed on an x86-64 Linux system, it prints the string
+	\texttt{0x48\\n} and terminates normally, even though \texttt{p2} never initializes variable
+	\texttt{main}. Can you explain this?
+\end{ex}
+
+\begin{sol}
+	\
+	At compile time, the compiler exports the \texttt{main} global symbol in \texttt{foo6.o} to the assembler
+	as a strong symbol because it is a function. Meanwhile, it exports the \texttt{main} global symbol
+	in \texttt{bar6.o} as a weak global symbol because it is an uninitialized variable. By rule 2 on
+	page 680, when \texttt{main} is referenced, the strong symbol is chosen. Therefore, even though
+	the uninitialized variable \texttt{char main} would typically be assigned \texttt{0} (the value
+	of the null byte) which has hex representation \texttt{0x0}, the reference in the \texttt{printf}
+	in \texttt{bar6.c} actually uses the address of \texttt{main} from \texttt{foo6.c}.
+\end{sol}
+
+\begin{ex}{7.10}
+	Let \texttt{a} and \texttt{b} denote object modules or static libraries in the current directory, and
+	let $\texttt{a}\to\texttt{b}$ denote that \texttt{a} depends on \texttt{b}, in the sense that
+	\texttt{b} defines a symbol that is referenced by \texttt{a}. For each of the following scenarios, show
+	the minimal command line (i.e., one with the least number of object file and library arguments)
+	that will allow the static linker to resolve all symbolic references:
+	\begin{enumerate}[label=(\alph*)]
+		\item $\texttt{p.o} \to \texttt{libx.a} \to \texttt{p.o}$
+		\item $\texttt{p.o}\to \texttt{libx.a}$ \emph{and} $\texttt{liby.a}\to \texttt{libx.a}$
+		\item $\texttt{p.o}\to\texttt{libx.a}\to\texttt{liby.a}$ \emph{and}
+		$\texttt{libz.a}\to\texttt{libx.a}\to\texttt{libz.a}$
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The line is: \texttt{gcc p.o libx.a}. When the linker encounters \texttt{p.o}, it
+		notices that it is an object file, and adds it to the set of relocatable object files that
+		will be merged to form the executable. Since \texttt{p.o} depends on \texttt{libx.a},
+		we list it afterwards so that the linker can resolve these symbols. We do not have to
+		list \texttt{p.o} again.
+		\item The line is: \texttt{gcc p.o liby.a libx.a}. Since both \texttt{p.o} and \texttt{liby.a}
+		depend on symbols from \texttt{libx.a}, they should precede it.
+		\item A constraint is that \texttt{libx.a} must precede \texttt{liby.a} in the provided list
+		of static libraries. We must list \texttt{libz.a} twice; once before \texttt{libx.a} so
+		that it can reference symbols from \texttt{libx.a} that the linker will extract from
+		\texttt{libx.a} when it reaches it during its scan. At that point, the symbols will be resolved,
+		and \texttt{libx.a} will too will make references to symbols defined in \texttt{libz.a},
+		which as extracted from \texttt{libz.a} later when it is encountered during the scan.
+		Thus the line is: \texttt{gcc p.o libz.a libx.a libz.a liby.a}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{7.11}
+	The program header in Figure 7.14 indicates that the data segment occupies \texttt{0x230} bytes
+	in memory. However, only the first \texttt{0x228} bytes of these come from the executable file.
+	What causes this discrepancy?
+\end{ex}
+
+\begin{sol}
+	\
+	I think it's because \texttt{main.c}, the routine from which the program header table was created,
+	has the declaration:
+	\begin{lstlisting}
+int sum(int *a, int n);
+	\end{lstlisting}
+	which is a reference to an external symbol. It's a pointer to a function, and it is uninitialized,
+	so it belongs to the \texttt{bss} segment. This does not occupy disk space in the object file. Once
+	it has been resolved, this contains the absolute address of the procedure defined in the \texttt{sum.o}
+	module.
+\end{sol}
+
+\begin{ex}{7.12}
+	Consider the call to function \texttt{swap} in object file \texttt{m.o} (Problem 7.6).
+	\begin{lstlisting}[language={}]
+9: e8 00 00 00 00	callq e <main+0xe>	swap()
+	\end{lstlisting}
+	with the following relocation entry:
+	\begin{lstlisting}[language={}]
+r.offset = 0xa
+r.symbol = swap
+r.type = R_X86_64_PC32
+r.addend = -4
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Suppose that the linker relocates \texttt{.text} in \texttt{m.o} to address \texttt{0x4004e0}
+		and \texttt{swap} to address \texttt{0x4004f8}. Then what is the value of the relocated reference to
+		\texttt{swap} in the \texttt{callq} instruction?
+		\item Suppose that the linker relocates \texttt{.text} in \texttt{m.o} to address \texttt{0x4004d0}
+		and \texttt{swap} to \texttt{0x400500}. Then what is the value of the relocated reference to
+		\texttt{swap} in the \texttt{callq} instruction?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item First we need compute the address of the reference:
+		\begin{lstlisting}[language={}]
+/* .text section address for m.o */
+ADDR(s)	=	ADDR(.text) = 0x4004e0
+refaddr	=	ADDR(s)  + r.offset
+		=	0x4004e0 + 0xa
+		=	0x4004ea
+		\end{lstlisting}
+		Then we use this to update the reference in \texttt{m.o}:
+		\begin{lstlisting}[language={}]
+/* Address of swap.o */
+ADDR(r.symbol) = ADDR(swap) = 0x4004f8
+
+*refptr =	(unsigned) (ADDR(r.symbol)	+ r.addend	- refaddr)
+		=	(unsigned) (0x4004e8		+ (-4)		- 0x4004ea)
+		=	(unsigned) 0x2
+		\end{lstlisting}
+		The value of the relocated referenced to \texttt{swap} in \texttt{callq} is thus
+		\texttt{0x2}.
+		\item Like before, we first compute the address of the reference:
+\begin{lstlisting}[language={}]
+	/* .text section address for m.o */
+ADDR(s)	=	ADDR(.text) = 0x4004d0
+	refaddr	=	ADDR(s)  + r.offset
+	=	0x4004d0 + 0xa
+	=	0x4004da
+\end{lstlisting}
+		Then we use this to update the reference in \texttt{m.o}:
+		\begin{lstlisting}[language={}]
+/* Address of swap.o */
+ADDR(r.symbol) = ADDR(swap) = 0x400500
+
+*refptr =	(unsigned) (ADDR(r.symbol)	+ r.addend	- refaddr)
+		=	(unsigned) (0x400500		+ (-4)		- 0x4004da)
+		=	(unsigned) 0xa
+		\end{lstlisting}
+		The value of the relocated reference is \texttt{0xa}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{7.13}
+	Performing the following tasks will help you become more familiar with the various tools for
+	manipulating object files.
+	\begin{enumerate}[label=(\alph*)]
+		\item How many object files are contained in the versions of \texttt{libc.a} and
+		\texttt{libm.a} on your system?
+		\item Does \texttt{gcc -Og} produce different executable code than \texttt{gcc -Og -g}?
+		\item What shared libraries does the \texttt{gcc} driver on your system use?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The \texttt{ar} command creates static libraries, and inserts, deletes, lists, and extracts
+		members. In this case, the members are the relocatable object files. Running \texttt{ar --help}
+		reveals that the \texttt{-t} option displays the contents of the archive. To find \texttt{libc.a}
+		on my system, I ran the \texttt{find} command, and I used the \texttt{-exec} option to run
+		\texttt{ar -t}. I then piped it to \texttt{wc -l} which prints the number lines that it reads
+		in \texttt{stdin}:
+		\begin{lstlisting}[language={bash}]
+find /usr/lib -type f -name ``*libc.a'' -exec ar -t \{\} \textbackslash{}; | wc -l
+		\end{lstlisting}
+		Notice there is no newline in the actual command. The result was \texttt{2055}. The same
+		approach did not immediately work for \texttt{libm.a}, which on my system is not an \texttt{ar}
+		archive, but rather an ASCII text file with the following content:
+		\begin{lstlisting}[language={}]
+/* GNU ld script
+*/
+OUTPUT\_FORMAT(elf64-x86-64)
+GROUP ( /usr/lib/x86\_64-linux-gnu/libm-2.35.a /usr/lib/x86\_64-linux-gnu/libmvec.a )
+		\end{lstlisting}
+		Thus I instead ran \texttt{arr} on both of those files. \texttt{libm-2.35a} had 795 members,
+		and \texttt{libmvec.a} had 548 members.
+		\item Yes, it is different. The following information is in the \texttt{gcc} man page:
+		\begin{lstlisting}[language={}]
+To tell GCC to emit extra information for use by a debugger, in almost all cases you need only to add -g
+to your other options.
+
+GCC allows you to use -g with -O.  The shortcuts taken by optimized code may occasionally be surprising:
+some variables you declared may not exist at all; flow of control may briefly move where you did not
+expect it; some statements may not be executed because they compute constant results or their values are
+already at hand; some statements may execute in different places because they have been moved out of
+loops.  Nevertheless it is possible to debug optimized output.  This makes it reasonable to use the
+optimizer for programs that might have bugs.
+
+If you are not using some other optimization option, consider using -Og with -g.  With no -O option at
+all, some compiler passes that collect information useful for debugging do not run at all, so that -Og may
+result in a better debugging experience.
+		\end{lstlisting}
+		\item First I ran \texttt{whereis} to find the \texttt{gcc} executable on my system. Then I ran
+		\texttt{ldd} to list shared libraries that it needs at runtime:
+		\begin{lstlisting}[language=bash]
+whereis gcc
+# gcc: /usr/bin/gcc /usr/lib/gcc /usr/share/gcc /usr/share/man/man1/gcc.1.gz
+ldd /usr/bin/gcc
+		\end{lstlisting}
+		The output was:
+		\begin{lstlisting}[language={}]
+	linux-vdso.so.1 (0x00007ffff1578000)
+libc.so.6 => /lib/x86\_64-linux-gnu/libc.so.6 (0x000074ec41000000)
+/lib64/ld-linux-x86-64.so.2 (0x000074ec412c5000)
+		\end{lstlisting}
+		According to the man page \emph{vdso(7)}, ``The ``vDSO'' (virtual dynamic shared object) is a small shared library that the kernel automatically maps into the address space
+		of all user-space applications." On the other hand, \texttt{libc.so.6} is the shared object
+		for the standard C library, and \texttt{ld-linux-x86-64.so.2} is the shared object
+		for the dynamic linker.
+	\end{enumerate}
+\end{sol}
 \end{document}
