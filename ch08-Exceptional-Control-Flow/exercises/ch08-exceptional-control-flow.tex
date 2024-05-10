@@ -1,0 +1,306 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 8: Exceptional Control Flow}
+
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{8.1}
+	Consider three processes with the following starting and ending times:
+	\begin{center}
+		\begin{tabular}{ccc}
+			Process & Start time & End time\\
+			\hline
+			A & 0 & 2\\
+			B & 1 & 4\\
+			C & 3 & 5
+		\end{tabular}
+	\end{center}
+	For each pair of processes, indicate whether they run concurrently (Y)  or not (N).
+\end{ex}
+
+\begin{sol}
+	\
+	A pair of processes is concurrent if one starts after the other begins and before the other one ends.
+	A and B are concurrent because B starts at $t=1$, which is after the start time of A ($t=0$)
+	and the end time of A $(t=2$). A and C are not concurrent because A starts at 0 and C has not yet
+	begun (it starts at $t=3$). Lastly, B and C are concurrent because C begins at $t=3$ after
+	B has started ($t=1$) but before B ends ($t=4$).
+	\begin{center}
+		\begin{tabular}{cc}
+			Process pair & Concurrent? \\
+			\hline
+			AB & Yes\\
+			AC & No\\
+			BC & Yes
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{8.2}
+	Consider the following program:
+	\begin{lstlisting}
+int main()
+{
+	int x = 1;
+	
+	if (Fork() == 0)
+		printf("p1: x=%d\n", ++x);
+	printf("p2: x=%d\n", --x);
+	exit(0);
+}
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item What is the output of the child process?
+		\item What is the output of the parent process?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item \texttt{fork()} system call in the child process returns 0. Therefore, both print
+		statements execute. The output is:
+		\begin{lstlisting}[language=={}]
+p1: x=2
+p2: x=1
+		\end{lstlisting}
+		\item The \texttt{fork()} system call in the parent returns the process ID of the child,
+		which is guaranteed to be a positive integer. Therefore, only the last print statement
+		executes:
+		\begin{lstlisting}[language={}]
+p2: x=0
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.3}
+	List all of the possible output sequences for the following program:
+	\begin{lstlisting}
+int main()
+{
+	if (Fork() == 0) {
+		printf("a"); fflush(stdout);
+	}
+	else {
+		printf("b"); fflush(stdout);
+		waitpid(-1, NULL, 0);
+	}
+	printf("c"); fflush(stdout);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}
+		\item One possibility is that the child process completes all of its instructions before the
+		parent gets a time slice after the work. Then the parent displays \texttt{b}, calls
+		\texttt{waitpid} to reap the child but returns immediately because the child has already
+		exited, and finally, the parent displays \texttt{c} before it too exits:
+		\begin{lstlisting}[language={}]
+acbc
+		\end{lstlisting}
+		\item Another possibility is that the child gets control after the work before the parent,
+		displays \texttt{a}, but is then preempted. The parent begins executing and displays
+		\texttt{b}. Then either it executes \texttt{waitpid} or is preempted before it does,
+		allowing the child to display \texttt{c}. Finally, the parent displays \texttt{c}:
+		\begin{lstlisting}[language={}]
+abcc
+		\end{lstlisting}
+		\item Another possibility is that immediately after the work, the parent has the opportunity
+		to displays \texttt{b}. Then the child gets control because the parent's time slice
+		ends or because the parent calls \texttt{waitpid}. At this point, the child displays \texttt{a}.
+		Since it has not terminated, the parent remains suspended due to \texttt{waitpid}, so
+		the child gets to display \texttt{c}. Finally the parent reaps the child and displays
+		\texttt{c}:
+		\begin{lstlisting}[language={}]
+bacc
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.4}
+	Consider the following program:
+	\begin{lstlisting}
+int main()
+{
+	int status;
+	pid_t pid;
+	
+	printf("Hello\n");
+	pid = Fork();
+	printf("%d\n", !pid);
+	if (pid != 0) {
+		if (waitpid(-1, &status, 0) > 0) {
+			if (WIFEXITED(status) != 0)
+				printf("%d\n", WEXITSTATUS(status));
+		}
+	}
+	printf("Bye\n");
+	exit(2);
+}
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item How many output lines does this program generate?
+		\item What is one possible ordering of these output lines?
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Assuming no errors, the child displays two lines: it executes \texttt{printf}
+		statement immediately following the \texttt{Fork()}, skips the \texttt{if} block
+		because its \texttt{pid} value is 0, and displays the \texttt{Bye} message.
+		The parent, on the other hand, displays three lines: the one immediately after the
+		\texttt{Fork()}, the exit status of the child inside the nested \texttt{if}, and
+		then \texttt{Bye}. In total there are 5 output lines.
+		\item Since the \texttt{stdout} stream from \texttt{stdio.h} is line-buffered by default, all
+		lines will be displayed in the order they execute because they all have a \texttt{\\n} as
+		the last character in their strings. The initial \texttt{Hello} is always printed first by the parent. One possibility is that the parent gets control immediately after the work,
+		displaying the result of the second \texttt{printf} call. Since the result of the \texttt{fork}
+		call in the parent is the process ID of the child, the value of \texttt{pid} is a positive
+		integer, so the expression \texttt{!pid} evaluates to 0, which in turn is displayed.
+		
+		\
+		Control is then gained by the child because either the parent is preempted or because
+		it is willfully suspended as a result of the \texttt{waitpid} call. The child now
+		calls its first \texttt{printf} call; since \texttt{pid} is 0 in the child, the
+		result is that \texttt{!pid} is 1, so that its printed to standard out. Since the
+		parent is waiting for the parent to terminate, the child is able to print its next
+		statement, displaying \texttt{Bye}. Assuming no errors occur and the \texttt{exit(2)}
+		call runs successfully, the \texttt{waitpid} calls returns the (positive) process ID
+		of the child, entering the branch of the if-statement. The \texttt{WIFEXITED} macro
+		detects that the child exited normally by calling \texttt{exit}, so the next
+		if-statement also evaluates to true. Then the \texttt{WEXITSTATUS} macro returns
+		the exit status, which was 2, and that value is displayed by \texttt{printf}.
+		Finally,t he \texttt{Bye} message is displayed by the parent:
+		\begin{lstlisting}[language={}]
+Hello
+0
+1
+Bye
+2
+Bye
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.5}
+	Write a wrapper function for \texttt{sleep}, called \texttt{snooze}, with the following
+	interface:
+	\begin{lstlisting}
+unsigned int snooze(unsigned int secs);
+	\end{lstlisting}
+	The \texttt{snooze} function behaves exactly as the \texttt{sleep} function, except that
+	it prints a message describing how long the process actually slept:
+	\begin{lstlisting}[language={}]
+Slept for 4 of 5 secs.
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Below is my implementation, which is found at \texttt{./05-snooze/snooze.c}:
+	\lstinputlisting{./05-snooze/snooze.c}
+\end{sol}
+
+\begin{ex}{8.6}
+	Write a program called \texttt{myecho} that prints its command-line arguments and environment
+	variables. For example:
+	\begin{lstlisting}[language={}]
+linux> ./myecho arg1 arg2
+Command-line arguments:
+	argv[ 0]: myecho
+	argv[ 1]: arg1
+	argv[ 2]: arg2
+Environment variables:
+	envp[ 0]: PWD=/usr0/doh/ics/code/ecf
+	envp[ 1]: TERM=emacs
+	.
+	.
+	.
+	envp[25]: USER=droh
+	envp[26]: SHELL=/usr/local/bin/tcsh
+	envp[27]: HOME/usr0/droh
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Below is my implementation, which is found at \texttt{./06-myecho/myecho.c}:
+	\lstinputlisting{./06-myecho/myecho.c}
+\end{sol}
+
+\end{document}
