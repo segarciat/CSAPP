@@ -303,4 +303,660 @@ Environment variables:
 	\lstinputlisting{./06-myecho/myecho.c}
 \end{sol}
 
+\begin{ex}{8.7}
+	Write a program called \texttt{snooze} that takes a single command-line argument, calls the
+	\texttt{snooze} function from Problem 8.5 with this argument, and then terminates. Write your
+	program so that the user can interrupt the \texttt{snooze} function by typing CTRL+C at the
+	keyboard. For example:
+	\begin{lstlisting}[language={}]
+linux> ./snooze 5
+CTRL+C		# User hits CTRL+C after 3 seconds
+Slept for 3 of 5 secs.
+linux>
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Funnily, I already wrote this program as part of Problem 8.5 to test my program. See
+	\texttt{./05-snooze/main.c}:
+	\lstinputlisting{./05-snooze/main.c}
+\end{sol}
+
+\begin{ex}{8.8}
+	What is the output of the following program?
+	\begin{lstlisting}
+volatile long counter = 2;
+
+void handler1(int sig)
+{
+	sigset_t mask, prev_mask;
+	
+	Sigfillset(&mask);
+	Sigprocmask(SIG_BLOCK, &mask, &prev_mask);	/* Block sigs */
+	Sio_put1(--counter);
+	Sigprocmask(SIG_SETMASK, &prev_mask, NULL); /* Restore sigs */
+	
+	_exit(0);
+}
+
+int main()
+{
+	pid_t pid;
+	sigset_t mask, prev_mask;
+	
+	printf("%ld", counter);
+	fflush(stdout);
+	
+	signal(SIGUSR1, handler1);
+	if ((pid = Fork()) == 0) {
+		while(1) {};
+	}
+	Kill(pid, SIGUSR1);
+	Waitpid(-1, NULL, 0);
+	Sigfillset(&mask);
+	Sigprocmask(SIG_BLOCK, &mask, &prev_mask); /* Block sigs */
+	printf("%ld", ++counter);
+	Sigprocmask(SIG_SETMASK, &prev_mask, NULL); /* Restore sigs */
+	
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Initially, the parent outputs \texttt{2}, the initial value of the global \texttt{counter} variable.
+	By default, the \texttt{SIGUSR1} signal is ignored. The program calls the \texttt{signal()} function
+	to install a handler for \texttt{SIGUSR1} before it forks. When the child gains control, its
+	\texttt{Fork()} call returns 0, causing it to enter an infinite loop. The parent, on the other hand,
+	uses the \texttt{Kill} system call request the kernel deliver a \texttt{SIGUSR1} signal to the child
+	on its behalf. Because the signal handler was installed before the fork and the \texttt{SIGUSR1} signal is
+	not blocked, the process receives the signal and catches it with the  \texttt{handler1} signal
+	handler. The handler blocks all incoming signals with \texttt{Sigfillset()} and \texttt{Sigprocmask},
+	decrements \texttt{count}, and then uses the async-signal-safe function \texttt{Sio\_put1} to
+	displays its new value. It then restores the mask and terminates normally by calling \texttt{\_exit()}.
+	
+	\
+	The parent reaps the child with \texttt{Waitpid}, blocks signals as before so that it can increase
+	\texttt{count} to 3 and display its new value with \texttt{printf} uninterrupted, and then terminates.
+	Keep in mind that after the \texttt{Fork()}, the data segments of the two processes are private, so
+	the modification to the value of \texttt{counter} in the child does not affect \texttt{counter} in the
+	parent. The output is:
+	\begin{lstlisting}[language={}]
+213
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{8.9}
+	Consider the four processes with the following starting and ending times:
+	\begin{center}
+		\begin{tabular}{ccc}
+			Process & Start time & End time\\
+			\hline
+			A & 5 & 7\\
+			B & 2 & 4\\
+			C & 3 & 6\\
+			D & 1 & 8
+		\end{tabular}
+	\end{center}
+	For each pair of processes, indicate whether they run concurrently (Y) or not (N).
+\end{ex}
+
+\begin{sol}
+	\
+	See approach in practice problem 8.1
+	\begin{center}
+		\begin{tabular}{cc}
+			Process pair & Concurrent?\\
+			\hline
+			AB & N\\
+			AC & Y\\
+			AD & Y\\
+			BC & Y\\
+			BD & Y\\
+			CD & Y
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{8.10}
+	In this chapter, we have introduced some functions with unusual call and return behaviors:
+	\texttt{setjmp}, \texttt{longjmp}, \texttt{execve}, and \texttt{fork}. Match each function with one
+	of the following behaviors:
+	\begin{enumerate}[label=(\alph*)]
+		\item Called once, return twice.
+		\item Called once, never returns.
+		\item Called once, returns one or more times.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Called once, return twice: This is characteristic of \texttt{fork()}. It creates a child
+		process. In the newly created child, it returns 0; in the parent, it returns the process ID of
+		the child.
+		\item Called once, never returns: The \texttt{longjmp} function jumps to a section previously
+		marked by a call to \texttt{setjmp}. The \texttt{execve} loads and runs the executable at
+		the pathname provided in its first argument in the context of the calling process. If successful,
+		it never returns. It overwrites the address space of the current process and it does not create a new
+		process, with the same PID, and it inherits all file descriptors that were open at the time of the call.		
+		\item Called once, returns one or more times: The \texttt{setjmp} call marks a point that
+		\texttt{longjmp} can jump to by first saving the current environment, including the 
+		program counter, stack pointer, and general-purpose registers. Its initial call returns 0;
+		later calls return a value passed to the second argument of \texttt{longjmp}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.11}
+	How many ``\texttt{hello}" output lines does this program have?
+	\begin{lstlisting}[]
+#include "csapp.h"
+
+int main()
+{
+	int i;
+	
+	for (i = 0; i < 2; i++)
+		Fork();
+	printf("hello\n");
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The first \texttt{Fork()} creates a child. At this point, both parent and child are in the loop
+	with \texttt{i = 0}, about to start the iteration with\texttt{i=1}. Then, both call \texttt{Fork()},
+	each creating a new process. At this point, there are 4 processes in existence, and \texttt{i} increases
+	to 2 in all of them, causing them all to exit the loop and proceed to \texttt{printf}. The
+	\texttt{hello} message is then printed 4 times, one per line.
+\end{sol}
+
+\begin{ex}{8.12}
+	How many ``\texttt{hello}" output lines doe this program print?
+	\begin{lstlisting}
+#include "csapp.h"
+
+void doit()
+{
+	Fork();
+	Fork();
+	printf("hello\n");
+	return;
+}
+
+int main()
+{
+	doit();
+	printf("hello\n");
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The call to \texttt{doit()} starts with a \texttt{Fork()}. Then parent and the child then both
+	call \texttt{Fork()}. Now there are 4 processes in existence, all currently in the \texttt{doit}
+	procedure about to print \texttt{hello}. After all 4 output hello, they all move back to
+	\texttt{main} and also print \texttt{hello}. Therefore there are 8 ``\texttt{hello}" output
+	lines.
+\end{sol}
+
+\begin{ex}{8.13}
+	What is one possible output of the following program?
+	\begin{lstlisting}
+#include "csapp.h"
+
+int main()
+{
+	int x = 3;
+	
+	if (Fork() != 0)
+		printf("x=%d\n", ++x);
+	printf("x=%d\n", --x);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	In general, the output is undetermined because we cannot guarantee the order of execution of
+	the parent and child process after the call to \texttt{Fork()}. Suppose that the child
+	gets control first. Its \texttt{Fork()} call returns 0, so it skips if-statement block.
+	Assuming it has the chance to execute \texttt{printf} before it is preempted, we will see
+	the text \texttt{x=2} displayed on the screen. When control returns to the parent process,
+	its \texttt{Fork()} call returns the nonzero process ID of the child, which at this point
+	may have already terminated and is a zombie. The parent prints \texttt{x=4} because its
+	data segment and stack are separate from the child's, which means that its value of \texttt{x}
+	is unchanged by the previous \texttt{--x} in the child. Finally, it decrements \texttt{x} back
+	to 3 and prints \texttt{4}. One possible output is thus:
+	\begin{lstlisting}[language={}]
+243
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{8.14}
+	How many ``hello" output line does this program print?
+	\begin{lstlisting}
+#include "csapp.h"
+void doit()
+{
+	if (Fork() == 0) {
+		Fork();
+		printf("hello\n");
+		exit(0);
+	}
+	return;
+}
+
+int main()
+{
+	doit();
+	printf("hello\n");
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The parent calls \texttt{doit()}, which in turn calls \texttt{Fork()}. In the parent, this returns
+	the nonzero process ID of the newly created child, so the parent returns from \texttt{doit}, and
+	prints \texttt{hello} before exiting. In the child, \texttt{Fork()} returns 0, and in its
+	\texttt{if}-statement body it proceeds to also call \texttt{Fork()}. Both it and its child
+	print the \texttt{hello} message in the \texttt{if}-statement, but they call \texttt{exit(0)},
+	so they do not print the \texttt{hello} from \texttt{main}. Overall, 3 \texttt{hello} lines
+	are output.
+\end{sol}
+
+\begin{ex}{8.15}
+	How many ``hello" lines does this program print?
+	\begin{lstlisting}
+#include "csapp.h"
+
+void doit()
+{
+	if (Fork() == 0) {
+		Fork();
+		printf("hello\n");
+		return;
+	}
+	return;
+}
+
+int main()
+{
+	doit();
+	printf("hello\n");
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+		The parent calls \texttt{doit()}, which in turn calls \texttt{Fork()}. In the parent, this returns
+	the nonzero process ID of the newly created child, so the parent returns from \texttt{doit}, and
+	prints \texttt{hello} before exiting. In the child, \texttt{Fork()} returns 0, and in its
+	\texttt{if}-statement body it proceeds to also call \texttt{Fork()}. Both it and its child
+	print the \texttt{hello} message in the \texttt{if}-statement, and both print the \texttt{hello}
+	back in main. Overall, 5 ``\texttt{hello}" lines are output by this program.
+\end{sol}
+
+\begin{ex}{8.16}
+	What is the output of the following program?
+	\begin{lstlisting}
+#include csapp.h"
+int counter = 1;
+
+int main()
+{
+	if (fork() == 0) {
+		count--;
+		exit(0);
+	}
+	else {
+		Wait(null);
+		printf("counter = %d\n", ++count);
+	}
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The parent calls \texttt{fork()}, which returns 0 in the child, causing it to enter
+	the \texttt{if}-statement. The child decrements \texttt{count} and immediately
+	exits. In the parent, the \texttt{Wait} call suspends the parent until the child terminates.
+	Its \texttt{counter} value is unaffected by the child. The parent uses \texttt{++count} to increment
+	its value to 2, and then displays its value:
+	\begin{lstlisting}[language={}]
+counter = 2
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{8.17}
+	Enumerate all of the possible outputs of the program in Practice Problem 8.4.
+\end{ex}
+
+\begin{sol}
+	\
+	The parent prints \texttt{Hello} and then forks. After, the following disjoint outcomes may
+	occur:
+	\begin{enumerate}[label=(\alph*)]
+		\item Child gets control. Its \texttt{Fork()} call returns 0, assigning that to the
+		\texttt{pid} variable. The \texttt{printf} outputs the value of \texttt{!pid}, which
+		is 1. Then the child process calls \texttt{Bye} and exits. The parent gains control,
+		outputs \texttt{0} because its \texttt{Fork()} call returns the nonzero value of its
+		child's PID, which meaning \texttt{!pid} is 0. The parent suspends while it waits
+		to reap its child by calling \texttt{waitpid}, but the call returns immediately because
+		the child has already terminated. The following \texttt{if}-statements are entered
+		under ``normal" conditions, so the exit status of 2 of its child is printed. Finally,
+		It prints\texttt{Bye}:
+		\begin{lstlisting}
+Hello
+1
+Bye
+0
+2
+Bye
+		\end{lstlisting}
+		\item Again, child gets control, and it has a chance to output \texttt{1}. But it is
+		preempted, giving control the parent, which now prints \texttt{0}. The parent is preempted,
+		or it reaches the \texttt{waitpid} call; in either case, the child regains control and prints
+		\texttt{Bye}. The parent regains control and the same as in (a) happens:
+		\begin{lstlisting}[language={}]
+Hello
+1
+0
+Bye
+2
+Bye
+		\end{lstlisting}
+		\item The child gets control first again. However it is preempted before outputting 1.
+		The parent prints 0, and it is either preempted or is suspended due to \texttt{waitpid}.
+		Now the child can print all of its lines, and then the parent can print the rest of its lines:
+		\begin{lstlisting}[language={}]
+Hello
+0
+1
+Bye
+2
+Bye
+		\end{lstlisting}
+		\item The parent gets control, printing 0. Then it is preempted or the is suspended by
+		\texttt{waitpid}, giving control to the child. Control won't return to parent until the
+		child has finished, so the child prints all of its lines and then the parent does the same:
+		\begin{lstlisting}[language={}]
+Hello
+0
+1
+Bye
+2
+Bye
+		\end{lstlisting}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.18}
+	Consider the following program:
+	\begin{lstlisting}
+#include "csapp.h"
+
+void end(void)
+{
+	printf("2"); fflush(stdout);
+}
+
+int main()
+{
+	if (Fork() == 0)
+		atexit(end);
+	if (Fork() == 0) {
+		printf("0"); fflush(stdout);
+	}
+	else {
+		printf("1"); fflush(stdout);
+	}
+	exit(0);
+}
+	\end{lstlisting}
+	Determine which of the following outputs are possible. \emph{Note}: The \texttt{atexit} function
+	takes a pointer to a function and adds it to a list of functions (initially empty) that will be
+	called when the \texttt{exit} function is called.
+	\begin{enumerate}[label=(\alph*)]
+		\item 112002
+		\item 211020
+		\item 102120
+		\item 122001
+		\item 100212
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item This outcome is possible as follows. After \emph{parent} has called \texttt{Fork()},
+		it has created \emph{child1}. When \emph{child1} gets control, it registers \texttt{end}
+		with \texttt{atexit}. Both \emph{parent} and \emph{child1} call \texttt{Fork()} again in
+		the expression within the second \texttt{if}-statement; \emph{parent} creates \emph{child2} and
+		\emph{child1} creates \emph{grandchild}. If \texttt{parent} gets control first, it prints 1 and exits.
+		If \texttt{child1} gets control after, it too prints 1. If it exits and its \texttt{atend}is called
+		before it is preempted, it displays 2. If \emph{child2} then gains control, it displays 0
+		and exits. In this case. \texttt{end} is not called because \emph{child2} is a child of
+		\emph{parent}, which did not call \texttt{atexit}, so this registration is not inherited.
+		However, when \emph{grandchild} gets control, it prints 0, and it also prints 2 because it
+		inherits the registration of \texttt{end} from \emph{child1}.
+		
+		\item This is impossible. Either \emph{child1} or \emph{grandchild} has to execute first
+		to display \texttt{2}. But if \emph{child1} executes first, it displays 1 before
+		exiting; if \emph{grandchild} executes first, it displays 0 before it exiting.
+		
+		\item This outcome is possible. \emph{parent} may receive control first. Then \emph{grandchild}
+		receives control afterwards, displaying 0 and exiting; since it inherited the \texttt{atexit}
+		registration from \emph{child1}, it prints 2.. Next, \emph{child1} gets control, displaying 1 and
+		exiting, causing it to output 2. Lastly, \emph{child2} displays 0.
+		
+		\item Impossible. This implies \emph{child1} gets control and runs to completion, causing it
+		to print \texttt{12}. But the other 2 has to come from \emph{grandparent}, which must print 1
+		before its registered \texttt{end} function, which is called upon exit, prints 2.
+	
+		\item Its possible. The parent gets control and runs through completion, printing 1. Then
+		\emph{child2} runs to completion, printing 0. Then, \emph{child1} runs to completion,
+		printing 02. Finally, \emph{child1} runs to completion, printing 12.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.19}
+	How many lines of output does the following function print? Give your answer as a function of
+	$n$. Assume $n\geq 1$.
+	\begin{lstlisting}
+void foo(int n)
+{
+	int i;
+	
+	for (i = 0; i < n; i++)
+		Fork();
+	printf("hello\n");
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	It prints $2^n$ lines.
+\end{sol}
+
+\begin{ex}{8.20}
+	Use \texttt{execve} to write a program called \texttt{myls} whose behavior is identical to the
+	\texttt{/bin/ls} program. Your program should accept the same command-line arguments, interpret
+	the identical environment variables, and produce the identical output.
+	
+	\
+	The \texttt{ls} program gets the width of the screen from the \texttt{COLUMNS} environment variable. If
+	\texttt{COLUMNS} is unset, then \texttt{ls} assumes that the screen is 80 columns wide.
+	Thus, you can check your handling of the environment variable by setting the \texttt{COLUMNS}
+	environment to something less than 80:
+	\begin{lstlisting}[language={}]
+linux> setenv COLUMNS 40
+linux> ./myls
+ .
+ . // Output is 40 columns wide
+ .
+linux> unsetenv COLUMNS
+linux> ./myls
+ .
+ . // Output is now 80 columns wide
+ .
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	See \texttt{./20-myls/myls.c}:
+	\lstinputlisting{./20-myls/myls.c}
+\end{sol}
+
+\begin{ex}{8.21}
+	What are the possible output sequences from the following program?\\
+	\begin{lstlisting}
+int main()
+{
+	if (fork() == 0) {
+		printf("a"); fflush(stdout);
+	}
+	else {
+		printf("b"); fflush(stdout);
+		waitpid(-1, NULL, 0);
+	}
+	printf("c"); fflush(stdout);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}
+		\item \texttt{bacc}: The parent gets control immediately after the \texttt{fork}. It
+		is preempted because it time slice has run out, or suspended by \texttt{waitpid}.
+		The child prints \texttt{ac}. The parent finally prints \texttt{c}.
+		\item \texttt{acbc}: The child gets control first and runs through completion, printing
+		\texttt{ac}. Then the parent runs through completion, printing \texttt{bc}.
+		\item \texttt{abcc}: The child gets control, prints \texttt{a}, then is preempted, allowing the
+		parent to print \texttt{b}. Finally, the child prints \texttt{c}, and then the parent prints
+		\texttt{c}.
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{8.22}
+	Write your own version of the Unix \texttt{system} function
+	\begin{lstlisting}
+int mysystem(char *command);
+	\end{lstlisting}
+	The \texttt{mysystem} function executes \texttt{command} by invoking \texttt{/bin/sh -c command}
+	and then returns after \texttt{command} has completed. If \texttt{command} exits normally (by
+	calling the \texttt{exit} function), then \texttt{mysystem} returns the \texttt{command} exit
+	status. For example, if \texttt{command} terminates by calling \texttt{exit(8)}, then \texttt{mysystem}
+	returns the value 8. Otherwise, if \texttt{command} terminates abnormally, then \texttt{mysystem}
+	returns the status returned by the shell.
+\end{ex}
+
+\begin{sol}
+	\
+	See \texttt{./22-mysystem/mysystem.c}:
+	\lstinputlisting{./22-mysystem/mysystem.c}
+\end{sol}
+
+\begin{ex}{8.23}
+	One of your colleagues is thinking of using signals to allow a parent process to count events that
+	occur in a child process. The idea is to notify the parent each time an event occurs by sending
+	it a signal and letting the parent's signal handler increment a global \texttt{counter} variable,
+	which the parent can inspect after the child has terminated. However, when he runs the test program
+	in Figure 8.45 on his system, he discovers that when the parent calls \texttt{printf}, \texttt{counter}
+	always has a value of 2, even though the child has sent five signals to the parent.
+	
+	\begin{lstlisting}
+#include "csapp.h"
+
+int counter = 0;
+
+void handler(int sig)
+{
+	counter++;
+	sleep(1); /* Do some work in the handler */
+	return;
+}
+
+int main()
+{
+	int i;
+	
+	Signal(SIGUSR2, handler);
+	
+	if (Fork() == 0) { /* Child */
+		for (i = 0; i < 5; i++) {
+			Kill(getppid(), SIGUSR1);
+			printf("sent SIGUSR2 to parent\n");
+		}
+		exit(0);
+	}
+	
+	Wait(NULL);
+	printf("counter=%d\n", counter);
+}
+	\end{lstlisting}	
+	Perplexed, he comes to you for help. Can you explain this bug?
+\end{ex}
+
+\begin{sol}
+	\
+	The child requests that 5 signals be sent to its parent. When the first signal is delivered
+	by the kernel and received by the parent, the handler catches the signal and increments
+	\texttt{counter} to 1, then suspends for 1 second via the \texttt{sleep(1)} statement.
+	During the execution of the handler, delivery of signals of type \texttt{SIGUSR2} are blocked,
+	so they are added to the set of pending signals. A duration of 1 second is humongous compared
+	to the time it takes the child to send the 5 signals. Therefore the remaining 4 signals are sent
+	while the handler in the parent is executed. The first of the remaining 4 signals is added to
+	the set of pending signals. However, because signals of the same type are not queued, the rest
+	of the signals are discarded. When the parent process continues and the handler returns,
+	the kernel delivers the pending \texttt{SIGUSR2} signal, incrementing \texttt{counter} to 2.
+	Again it suspends and then it ends. Control returns to the \texttt{main} procedure, where it
+	was waiting for its child to complete. It has long since completed, so the parent reaps the
+	child and prints the value of \texttt{counter}, which is 2.
+\end{sol}
+
+\begin{ex}{8.24}
+	Modify the program in Figure 8.18 so that the following conditions are met:
+	\begin{enumerate}[label=(\alph*)]
+		\item Each child terminates abnormally after attempting to write to a location in the
+		read-only text segment.
+		\item The parent prints output that is identical (except for the PIDs) to the following:
+		\begin{lstlisting}[language={}]
+child 12255 terminated by signal 11: Segmentation fault
+child 12254 terminated by signal 11: Segmentation fault
+		\end{lstlisting}
+	\end{enumerate}
+	\emph{Hint}: Read the \texttt{man} page for \texttt{psignal(3)}.
+\end{ex}
+
+\begin{ex}{8.25}
+	Write a version of the \texttt{fgets} function, called \texttt{tfgets}, that times out after
+	5 seconds. The \texttt{tfgets} function accepts the same inputs as \texttt{fgets}. If the user
+	doesn't type an input line within 5 seconds, the \texttt{tfgets} returns \texttt{NULL}. Otherwise,
+	it returns a pointer to the input line.
+\end{ex}
+
+\begin{sol}
+	\
+	See my implementation at \texttt{./25-tfgets/tfgets.c}:
+	\lstinputlisting{./25-tfgets/tfgets.c}
+\end{sol}
+
 \end{document}
