@@ -7,7 +7,7 @@
 
 static volatile sig_atomic_t interrupted = 0;
 
-void
+static void
 sigAlarmHandler(int sig)
 {
 	interrupted = 1;
@@ -15,9 +15,9 @@ sigAlarmHandler(int sig)
 
 char *tfgets(char *s, int size, FILE *stream)
 {
-	/* Install handler */
+	/* Install SIGALRM handler */
 	struct sigaction sa, oldsa;
-	sa.sa_flags = 0;
+	sa.sa_flags = 0; /* Do not restart system calls */
 	sigemptyset(&sa.sa_mask);
 	sa.sa_handler = sigAlarmHandler;
 	if (sigaction(SIGALRM, &sa, &oldsa) == -1)
@@ -27,14 +27,20 @@ char *tfgets(char *s, int size, FILE *stream)
 	alarm(TIMEOUT);
 	char *r = fgets(s, size, stream);
 
+	/* Restore handler */
+	if (sigaction(SIGALRM, &oldsa, NULL) == -1)
+		return NULL;
+
 	/* Remove alarm if still pending */
 	int savedErrno = errno;
 	alarm(0);
 	errno = savedErrno;
 
-	/* Restore handler */
-	if (sigaction(SIGALRM, &oldsa, NULL) == -1)
-		return NULL;
+	/* Assign depending on whether call was interrupted */
+	r = (interrupted) ? NULL : r;
+
+	/* Restore flag */
+	interrupted = 0;
 	
-	return (interrupted) ? NULL: r;
+	return r;
 }
