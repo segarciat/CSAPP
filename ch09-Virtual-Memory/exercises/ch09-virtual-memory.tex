@@ -1,0 +1,283 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 9: Virtual Memory}
+
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{9.1}
+	Complete the following table, filling in the missing entries, and replacing each question
+	mark with the appropriate integer. Use the following units: K = $2^{10}$ (kilo), M = $2^{20}$
+	(mega), G = $2^{30}$ (giga), T = $2^{40}$ (tera), P = $2^{50}$ (peta), or E = $2^{60}$ (exa).
+	\begin{center}
+		\begin{tabular}{ccc}
+			Number of VA bits ($n$) & Number of VA ($N$) & Largest possible VA\\
+			\hline
+			8 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & $2^{?}$ = 64 K & \makebox[1cm]{\hrulefill}\\
+			\makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill} & $2^{32} - 1$ = ?G - 1\\
+			\makebox[1cm]{\hrulefill} & $2^{?}$ = 256 T & \makebox[1cm]{\hrulefill}\\
+			64 & \makebox[1cm]{\hrulefill} & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	A virtual address with $N=2^n$ addresses is an $n$-bit address space. Note that
+	\begin{itemize}
+		\item $2^8=\frac{1}{2^2}2^{10}=\frac{1}{4}$ K.
+		\item $64$ K = $2^{6}\cdot 2^{10}=2^{16}$
+		\item If the largest address is $2^{32}-1$, then $n=32$. Thus $N=2^{32}=2^{2}\cdot 2^{30}$,
+		which is 4G.
+		\item $256$ T = $2^{8}\cdot 2^{40}$, so $n=48$. This is $\frac{1}{4}$ P.
+		\item $2^{64}=2^{4}\cdot 2^{60}$ = 4.
+	\end{itemize}
+	\begin{center}
+		\begin{tabular}{ccc}
+			Number of VA bits ($n$) & Number of VA ($N$) & Largest possible VA\\
+			\hline
+			8 & $2^{8}=\frac{1}{4}$ K & $2^{8}-1=\frac{1}{4}$ K $-$ 1\\
+			16 & $2^{16}$ = 64 K & $2^{16}-1=64$ K $-$ 1\\
+			32 & $2^{32}$ = 4 G & $2^{32} - 1$ = 4 G - 1\\
+			48 & $2^{48}$ = 256 T & $2^{48}-1=256$ T $-$ 1\\
+			64 & $2^{64}$ = 4 E & $2^{64}-1=4$ E $-$ 1
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{9.2}
+	Determine the number of page table entries (PTEs) that are needed for the following
+	combination of virtual address size ($n$) and page size ($P$):
+	\begin{center}
+		\begin{tabular}{ccc}
+			$n$ & $P=2^p$ & Number of PTEs\\
+			\hline
+			$16$ & 4K & \makebox[1cm]{\hrulefill}\\
+			$16$ & 8K & \makebox[1cm]{\hrulefill}\\
+			$32$ & 4K & \makebox[1cm]{\hrulefill}\\
+			$32$ & 8K & \makebox[1cm]{\hrulefill}
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	For $n=16$, there are $2^{16}$ virtual addresses. According to Section 9.3, the conceptual
+	arrangement of a virtual memory is as an array of $N$ contiguous byte-size cells stored on disk.
+	A page table size is given in bytes, so 4K means $2^{12}$ bytes. Since we use byte addressing,
+	an address space with a size of $2^{16}$ can have $2^{16}/2^{12}=2^{4}=16$ pages. If a page is 8K
+	bytes in size, we can fit $2^{16}/2^{13}=8$ pages instead.
+	
+	\
+	If $n=32$, then a 4K page size means $2^{32}/2^{12}=2^{20}=1$ M pages. If page size is
+	8K, then it's $2^{32}/2^{13}=2^{19}=2^{9}\cdot 2^{10}=512$K.
+	\begin{center}
+		\begin{tabular}{ccc}
+			$n$ & $P=2^p$ & Number of PTEs\\
+			\hline
+			$16$ & 4K & 16\\
+			$16$ & 8K & 8\\
+			$32$ & 4K & 1M\\
+			$32$ & 8K & 512K
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{9.3}
+	Given a 32-bit virtual address space and a 24-bit physical address, determine the number of
+	bits in the VPN, VPO, PPN, and PPO for the following page sizes $P$.
+\end{ex}
+
+\begin{sol}
+	\
+	The address pace uses $n=32$ bits, so the size of the virtual address space is $N=2^{32}$.
+	The page is is $P=2^{p}$ in bytes, where $p$ bits are used for the VPO, and $n-p$ bits
+	are used for the VPN. We also use the same $p$ bits for the PPO. The number of addresses
+	in the physical address space is given by $M=2^m$. Then $m-p$ bits are used for the PPN.
+	
+	\
+	In this problem, $n=32$, and $m=24$. When the page size is 1 KB, this means $P=2^{10}$,
+	meaning $p=10$. Thus we use 10 VPO bits and $n-p=22$ VPN bits. We also use $p=10$ PPO bits,
+	and we use $m-p=14$ PPN bits.
+	
+	\
+	For 2 KB pages, we have $p=2^{11}$, so we use $11$ VPO bits, $21$ VPN bits, $10$ PPO bits,
+	and $13$ PPN bits.
+	\begin{center}
+		\begin{tabular}{ccccc}
+			{} & \multicolumn{4}{c}{Number of}\\
+			\hline
+			$P$ & VPN bits & VPO bits & PPN bits & PPO bits\\
+			\hline
+			1 KB & 22 & 10 & 14 & 10\\
+			2 KB & 21 & 11 & 13 & 11\\
+			4 KB & 20 & 12 & 12 & 12\\
+			8 KB & 19 & 13 & 11 & 13
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{9.4}
+	Show how the example memory system in Section 9.6.4 translates a virtual address into a physical
+	address and accesses the cache. For the given virtual address, indicate the TLB entry accessed,
+	physical address, and cache byte value returned. Indicate whether the TLB misses, whether a page
+	fault occurs, and whether a cache miss occurs. If there is a cache miss, enter ``---" for
+	``Cache byte returned". If there is a page fault, enter ``---" for ``PPN" and leave parts C
+	and D blank.
+	
+	\
+	Virtual address: \texttt{0x03d7}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item Virtual address format: In the example, we used $n=14$ bits for the virtual address space,
+		and 1-byte words. The given address in hex can be translated to the following binary sequence:
+		\begin{center}
+			\texttt{00 0011 1101 0111}
+		\end{center}
+		\begin{center}
+			\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+				13 & 12 & 11 & 10 & 9 & 8 & 7 & 6 & 5 & 4 & 3 & 2 & 1 & 0\\
+				\hline
+				0 & 0 & 0 & 0 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 1 & 1 & 1 \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\item Address translation: With virtual addresses that are $n=14$ bits wide and page
+		sizes that are $P=64=2^{6}$ bytes in size, we use the lower $6$ bits for the VPO
+		and upper 8 bits for the VPN. Therefore, the VPN bits are \texttt{0000 1111}, which
+		is hex \texttt{0x0f}, and the VPO bits are \texttt{01 0111}, meaning the VPO in hex
+		is \texttt{0x17}. The lower 2 bits of the VPN are used for the TLBI, and the
+		upper 6 bits are used for the TLBT. Thus, \texttt{11} is \texttt{0x03} for the TLBI,
+		and \texttt{00 0011} is \texttt{0x03} also for the TLBT. It is a hit for the TLB,
+		since it returns a PPN of \texttt{0x0d}. Thus there is no page fault.
+		
+		\
+		\begin{center}
+			\begin{tabular}{cc}
+				Parameter & Value\\
+				\hline
+				VPN & \texttt{0x0f} \\
+				TLB index & \texttt{0x03} \\
+				TLB tag & \texttt{0x03} \\
+				TLB hit? (Y/N) & Yes\\
+				Page fault? (Y/N) & No \\
+				PPN & \texttt{0x0d}
+			\end{tabular}
+		\end{center}
+		\item Physical Address Format:
+				\begin{center}
+			\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
+				11 & 10 & 9 & 8 & 7 & 6 & 5 & 4 & 3 & 2 & 1 & 0\\
+				\hline
+				0 & 0 & 1 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 1 & 1\\
+				\hline
+			\end{tabular}
+		\end{center}
+		\item Physical memory reference:
+		Now we concatenate the 6-bit PPN \texttt{0x0D}, which is \texttt{00 1101} and the 6-bit VPO
+		\texttt{0x17}, which is \texttt{01 0111}, to create the physical address \texttt{0011 0101 0111},
+		or \texttt{0x357}.
+		
+		\
+		The MMU sends the physical address to the cache, which extracts the lowest 2 bits for the
+		block offset (CO), the next 4 bits for the cache index (CI), and the highest 6 bits
+		for the cache tag (CT). Thus, CO is \texttt{11} or \texttt{0x3}, the CI is
+		\texttt{0101} or \texttt{0x5}, and the highest 6 bits are \texttt{00 1101}, or \texttt{0x0d}.
+		The tag for the cache set with index \texttt{0x5} is \texttt{0x0d}, which does not
+		which matches what we have, we have a cache hit, and the valid bit is set. Thus we
+		use the offset, which is \texttt{0x3}, to get the byte in block 3, which is \texttt{0x1d}.
+			\begin{center}
+				\begin{tabular}{cc}
+					Parameter & Value\\
+					\hline
+					Byte offset & \texttt{0x3}\\
+					Cache index & \texttt{0x5}\\
+					Cache tag & \texttt{0x0d}\\
+					Cache hit ? (Y/N) & Yes\\
+					Cache byte returned & \texttt{0x1d}
+				\end{tabular}
+			\end{center}
+	\end{enumerate}
+\end{sol}
+
+\begin{ex}{9.5}
+	Write a C program \texttt{mmapcopy.c} that uses \texttt{mmap} to copy an arbitrary-size
+	disk file to \texttt{stdout}. The name of the input file should be passed as a command-line
+	argument.
+\end{ex}
+
+
+\end{document}
