@@ -46,5 +46,13 @@ main(int argc, char *argv[])
 	/* Write to stdout */
 	if (write(STDOUT_FILENO, bufp, sb.st_size) == -1)
 		unix_error("Failed to write contents to stdout");
+
+	/* Unmap */
+	if (munmap(bufp, sb.st_size) == -1)
+		unix_error("Failed to unmmap file");
+
+	/* Close file */
+	if (close(fd) == -1)
+		unix_error("Failed to close file");
 	exit(EXIT_SUCCESS);
 }

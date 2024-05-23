@@ -279,5 +279,205 @@
 	argument.
 \end{ex}
 
+\begin{sol}
+	\
+	See \texttt{./05-mmapcopy/mmapcopy.c}:
+	\lstinputlisting{./05-mmapcopy/mmapcopy.c}
+\end{sol}
+
+\begin{ex}{9.6}
+	Determine the block sizes and header values that would result from the following sequence
+	of \texttt{malloc} requests. Assumptions: (1) The allocator maintains double-word alignment
+	and uses an implicit free list with the block format from Figure 9.35. (2) Block sizes
+	are rounded tot he nearest multiple of 8 bytes.
+\end{ex}
+
+\begin{sol}
+	\
+	The format on Figure 9.35 requires a 4-byte header, where the 29 high-order bits encode
+	the size, the least significant bit indicates whether or not it is allocated,
+	and the next two bits are 0. Moreover we require a double-word alignment constraint,
+	which means that block sizes must be a multiple of 8.
+	
+	\
+	When 1 byte is requested by \texttt{malloc(1)}, we have a 4-byte header, 1 byte for the byload,
+	3 bytes of padding so that the block can satisfy the double-word constraint. Thus the header is
+	\texttt{0x8 | 0x1 = 0x9}, where the lest significant 1 indicates that the block has been allocated.
+	
+	\
+	When 5 bytes are requested, we again have a 4-byte header, 5 byte payload, and 7 bytes
+	of padding to satisfy the double-word alignment constraint. Thus the block itself
+	takes 16 bytes, meaning the header is \texttt{0x10 | 0x1 = 0x11}.
+	
+	\
+	With \texttt{malloc(12)}, we have a 4-byte header, 12-byte payload, and there is no
+	padding necessary because it already satisfies the alignment constraint. The
+	header is \texttt{0x10 | 0x1 = 0x11}.
+	
+	\
+	Lastly, with \texttt{malloc(13)}, we have a 4-byte header, 13-byte payload, and
+	7 bytes of padding to satisfy the double-word alignment constraint. The
+	header is \texttt{0x18 | 0x1 = 0x19}.
+	\begin{center}
+		\begin{tabular}{ccc}
+			Request & Block size (decimal bytes) & Block header (hex)\\
+			\hline
+			\texttt{malloc(1)} & 8 & \texttt{0x9}\\
+			\texttt{malloc(5)} & 16 & \texttt{0x11}\\
+			\texttt{malloc(12)} & 16 & \texttt{0x11}\\
+			\texttt{malloc(13)} & 24 & \texttt{0x19}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{9.7}
+	Determine the minimum block size for each of the following combinations of alignment
+	requirements and block formats. Assumptions: Implicit free list, zero-size payloads
+	are not allowed, and headers and footers are stored in 4-byte words.
+\end{ex}
+
+\begin{sol}
+	\
+	Single word alignment means 4-byte alignment. The header requires 4 bytes, and the
+	footer is a duplicate, so it requires the same amount. Since zero-size payloads
+	are not allowed, the smallest valid request is for 1 byte. To satisfy 4-byte alignment
+	we would need 3 bytes of padding, making the minimum 12 bytes for both allocated
+	blocks, whereas free blocks only need to be 8 bytes in size.
+	
+	Still using single word alignment, but this time without a footer for allocated blocks,
+	we would require a block of at least 8 bytes to satisfy the request for 1 byte;
+	this is the same size needed for a free block.
+	
+	\
+	For a double word alignment and allocated blocks with block header and footer, we need
+	8 bytes for header and footer, 1 byte for the request, and 7 bytes of padding to
+	satisfy alignment. Thus the minimum block size would be 16 bytes.
+	
+	\
+	Still using double word alignment, but with only a header for allocated blocks, we
+	would have a 4-byte header, 1 byte bot the smallest request, and 3 bytes of padding
+	for alignment. Thus the smallest allocated block would be 8 bytes.
+	\begin{center}
+		\begin{tabular}{cccc}
+			Alignment & Allocated block & Free block & Minimum block size (bytes)\\
+			\hline
+			Single word & Header and footer & Header and footer & 12\\
+			Single word & Header, but no footer & Header and footer & 8\\
+			Double word & Header and footer & Header and footer & 16\\
+			Double word & Header, but no footer & Header and footer & 8\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{9.8}
+	Implement a \texttt{find\_fit} function for the simple allocator described in Section 9.9.12.
+	\begin{lstlisting}
+static void *find_fit(size_t asize);
+	\end{lstlisting}
+	Your solution should perform a first-fit search of the implicit free list.
+\end{ex}
+
+\begin{sol}
+	\
+	First fit search, as described in Section 9.9.7, searches the free list from the
+	beginning and chooses the first free block that fits. For the memory model in question,
+	every block, whether free or allocated, has a 4-byte header encoding the size of the block
+	as well as a single bit indicating whether it is allocated or free. The useful data
+	provided to the caller is immediately past the header, and it is referred to as the
+	block pointer. For free blocks, there is also a footer, which is a copy of the header.
+	
+	\
+	The list begins with a 4-byte padding, followed immediately by the prologue, which
+	is an allocated block with just a header and a footer, and zero-sized payload.
+	The header of the prologue encodes a size \texttt{DSIZE} and it always remains allocated.
+	The \texttt{head\_listp} is a block pointer that always points to the prologue block, and
+	our search begins there. We can use the \texttt{HDR} macro on the block pointer, chained with
+	the \texttt{GET\_SIZE} macro to get its size. Since the heap list is terminated by an epilogue
+	header block whose size is encoded as 0 and is always allocated. Thus, we continue our search
+	as long as the current block has a nonzero size.
+	
+	\begin{lstlisting}
+static void *find_fit(size_t asize)
+{
+	void *p;
+	for (p = head_listp; GET_SIZE(HDRP(p)) != 0; p = NEXT_BLKP(HDRP(p)))
+		if (!GET_ALLOC(HDRP(p)) && GET_SIZE(HDRP(p)) >= asize)
+			return p;
+	return NULL;
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{9.9}
+	Implement a \texttt{place} function for the example allocator.
+	\begin{lstlisting}
+static void place(void *bp, size_t asize);
+	\end{lstlisting}
+	Your solution should place the requested block at the beginning of the free block, splitting
+	only if the size of the remainder block would equal or exceed the minimum block size.
+\end{ex}
+
+\begin{sol}
+	\
+	The procedure is used by \texttt{mm\_malloc} once a suitable block has been found.
+	It updates the header on the block found by turning on the allocation bit in the header and
+	compares the requested size against the actual size of the block. In the event the block's	
+	size is bigger than the requested size, and that the remainder size is enough to allocate a header,
+	a footer, and at least 1 block of useful data (in total \texttt{2 * DSIZE}), it writes a
+	header and footer just past the current block being allocated with the remainder size, setting
+	the allocated bit to 0.
+	\begin{lstlisting}
+static void place(void *bp, size_t asize)
+{
+	size_t total = GET_SIZE(HDR(p));
+	size_t remaining = total - size;
+	PUT(HDRP(p), PACK(asize, 1));
+	PUT(HDRP(p), PACK(asize, 1));
+	if (remaining >= 2 * DSIZE) { /* Enough for header, footer, and useful data */
+		/* Make caller's block just big enough */
+		PUT(HDRP(bp), PACK(asize, 1);
+		PUT(FTRP(bp), PACK(asize, 1);
+		bp = NEXT_BLKP(bp);
+		
+		/* Assign remainder to free list */
+		PUT(HDRP(bp), PACK(remaining, 0));
+		PUT(FTRP(bp), PACK(remaining, 0));
+	} else {
+		/* Assign entire thing to caller */
+		PUT(HDRP(bp), PACK(total, 1));
+		PUT(FTRP(bp), PACK(total, 1));
+	}
+}
+	\end{lstlisting}
+\end{sol}
+
+\begin{ex}{9.10}
+	Describe a reference pattern that results in severe external fragmentation in an allocator
+	based on simple segregated storage.
+\end{ex}
+
+\begin{sol}
+	\
+	Recall that, as described in Section 9.9.4 on page 846, \emph{external segregation} occurs
+	when there \emph{is} enough aggregate free memory to satisfy an allocate request, but no
+	single free block is large enough to handle request.
+	
+	\
+	In simple segregated storage, the free list for each size contains same-size blocks, each the
+	size of the largest element of the size class. Moreover, because blocks are never coalesced.
+	If requests come in for blocks larger than the size of any one class of blocks, then this
+	scheme will request memory from the operating system each time, even though there is enough
+	aggregate space. For example, if there are several blocks with 2048 bytes in size, and
+	the request is for a block of size 4096, then the memory system will request memory from
+	the operating system, and create a list of blocks of the requested size before handing us one.
+	Then, another request comes in for a size double that one, and the pattern repeats, even
+	though there certainly is enough memory to fulfill it if we were to coalesce the free
+	blocks.
+\end{sol}
+
+\begin{ex}{9.14}
+	Given an input file \texttt{hello.txt} that consists of the string \texttt{Hello, world\textbackslash n}, write a C program that uses \texttt{mmap} to change the contents of
+	\texttt{hello.txt} to \texttt{Jello, world!\textbackslash n}.
+\end{ex}
 
 \end{document}
