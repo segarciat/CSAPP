@@ -1,0 +1,301 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 10: System-Level I/O}
+
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{10.1}
+	What is the output of the following program?
+	\begin{lstlisting}
+#include "csapp.h"
+
+int main()
+{
+	int fd1, fd2;
+	
+	fd1 = Open("foo.txt", O_RDONLY, 0);
+	Close(fd1);
+	fd2 = Open("baz.txt", O_RDONLY, 0);
+	printf("fd2  = %d\n", fd);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Assuming that the program was directly executed by the shell and inherited from it the
+	stdin, stdout, and stderr file descriptors (0, 1, and 2, respectively), then \texttt{foo.txt}
+	would be opened with file descriptor 3. Since it was subsequently closed, it is now available
+	for the next file, which in this case is \texttt{baz.txt}. Thus, \texttt{fd2} has value \texttt{3}.
+\end{sol}
+
+\begin{ex}{10.2}
+	Suppose the disk file \texttt{foobar.txt} consists of the six ASCII characters \texttt{foobar}.
+	Then what is the output of the following program?
+	\begin{lstlisting}
+#include "csapp.h"
+
+int main()
+{
+	int fd1, fd2;
+	char c;
+	
+	fd1 = Open("foobar.txt", O_RDONLY, 0);
+	fd2 = Open("foobar.txt", O_RDONLY, 0);
+	Read(fd1, &c, 1);
+	Read(fd2, &c, 1);
+	printf("c = %c\n", c);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Because \texttt{open()} was called twice on the same file, both file descriptors point
+	to the same underlying file in the v-node table, but they point to the different files
+	on the open file table. Therefore, their file offsets (position) are different.
+	The output will be: \texttt{f}.
+\end{sol}
+
+\begin{ex}{10.3}
+	As before, suppose the disk file \texttt{foobar.txt} consists of the six ASCII characters
+	\texttt{foobar}. Then what is the output of the following program?
+	\begin{lstlisting}
+#include "csapp.h"
+
+int main()
+{
+	int fd;
+	char c;
+	
+	fd = Open("foobar.txt", O_RDONLY, 0);
+	if (Fork() == 0) {
+		Read(fd, &c, 1);
+		exit(0);
+	}
+	Wait(NULL);
+	Read(fd, &c, 1);
+	printf("c = %c\n", c);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	The process begins by opening \texttt{foobar.txt}. When it calls \texttt{Fork()}, the child
+	process inherits its file descriptors, and they point to the same entries on the file table.
+	The parent suspends by calling \texttt{Wait(NULL)}, allowing the child to read from the
+	descriptor first, and thus moving the file position forward by 1 byte. When the parent has
+	reaped the child, its call to \texttt{Read()} causes a byte at position 1 to be read,
+	and that character is \texttt{o}.
+\end{sol}
+
+\begin{ex}{10.4}
+	How would you use \texttt{dup2} to redirect standard input to descriptor 5?
+\end{ex}
+
+\begin{sol}
+	\
+	The standard input stream's file descriptor is normally given by \texttt{STDIN\_FILENO},
+	which is exposed in \texttt{unistd.h}. To redirect standard input to descriptor 5,
+	we must close the v-node associated with the standard input stream, and have the
+	\texttt{STDIN\_FILENO} file descriptor point to same entry in the open file table as
+	file descriptor 5, like so:
+	\begin{lstlisting}
+dup2(5, STDIN_FILENO);
+	\end{lstlisting}
+	
+\end{sol}
+
+\begin{ex}{10.5}
+	Assuming that the disk file \texttt{foobar.txt} consists of the six ASCII characters \texttt{foobar},
+	what is the output of the following program?
+	\begin{lstlisting}
+#include "csapp.h"
+
+int main()
+{
+	int fd1, fd2;
+	char c;
+	
+	fd1 = Open("foobar.txt", O_RDONLY, 0);
+	fd2 = Open("foobar.txt", O_RDONLY, 0);
+	Read(fd2, &c, 1);
+	Dup2(fd2, fd1);
+	Read(fd1, &c, 1);
+	printf("c = %c\n", c);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Throughput the entire program, \texttt{fd1} and \texttt{fd2} always point to the same underlying
+	file (i.e., v-node). However, their entries in the open file table are distinct before the
+	call to \texttt{Dup2}, which means their file offsets are different.
+	
+	\
+	When \texttt{Read()} is used on \texttt{fd2}, it moves its file pointer forward by 1, so
+	that the next character to be read is \texttt{o}. When \texttt{Dup2(fd2, fd1)} is called,
+	this causes \texttt{fd1} to be closed, and to be subsequently updated to point to the
+	same entry as \texttt{fd2}. Therefore, it now shares the file offsets with \texttt{fd2},
+	making it so that the call to \texttt{Read()} with \texttt{fd1} results in reading \texttt{o}.
+\end{sol}
+
+\begin{ex}{10.6}
+	What is the output of the following program?
+	\begin{lstlisting}
+#include "csapp.h"
+
+int main()
+{
+	int fd1, fd2;
+	
+	fd1 = Open("foo.txt", O_RDONLY, 0);
+	fd2 = Open("bar.txt", O_RDONLY, 0);
+	Close(fd2);
+	fd2 = Open("baz.txt", O_RDONLY, 0);
+	printf("fd2 = %d\n", fd2);
+	exit(0);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	Assuming that the program inherits the three standard file descriptors from the shell
+	(0, 1, and 2), then \texttt{fd1} will be 3, and \texttt{fd2} will be 4. When \texttt{fd2} is
+	closed, this makes file descriptor 4 again, which is thus reused when opening \texttt{baz.txt}.
+	hence, the output is 4.
+\end{sol}
+
+\begin{ex}{10.7}
+	Modify the \texttt{cpfile} program in Figure 10.5 so that it uses RIO functions to copy
+	standard input to standard output, \texttt{MAXBUF} bytes at a time.
+\end{ex}
+
+\begin{ex}{10.8}
+	Write a version of the \texttt{statcheck} program in Figure 10.10, called \texttt{fstatcheck},
+	that takes a descriptor number on the command line rather then a filename.
+\end{ex}
+
+\begin{sol}
+	\
+	See \texttt{08-fstatcheck/fstatcheck.c}:
+	\lstinputlisting{08-fstatcheck/fstatcheck.c}
+\end{sol}
+
+\begin{ex}{10.9}
+	Consider the following invocation of the \texttt{fstatcheck} program from Problem 10.8:
+	\begin{lstlisting}[language={}]
+linux> fstatcheck 3 < foo.txt
+	\end{lstlisting}
+	You might expect that this invocation of \texttt{fstatcheck} would fetch and display metadata
+	for file \texttt{foo.txt}. However, when we run it on our system, it fails with a ``bad file
+	descriptor." Given this behavior, fill in the pseudocode that the shell must be executing between
+	the \texttt{fork} and \texttt{execve} calls:
+	\begin{lstlisting}
+if (Fork() == 0) { /* child */
+	/* What code is the shell executing right here? */
+	Execve("fstatcheck", argv, envp);
+}
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	It's possible that the shell closes file descriptor 0, corresponding to standard input,
+	and opens the given file. The effect is that file descriptor 0 is available, so after
+	the call to \texttt{Open("foo.txt")}, it points to the underlying file. Thus, file descriptor
+	3 is never used. The shell probably does the following:
+	\begin{lstlisting}
+if (Fork() == 0) { /* child */
+	close(STDIN_FILENO);
+	int fd = Open("foo.txt", O_RDONLY, 0); /* On file descriptor 0 probably */
+	Execve("fstatcheck", argv, envp);
+}
+	\end{lstlisting}
+	The following is likely what we expected would happen:
+	\begin{lstlisting}
+if (Fork() == 0) { /* child */
+	int fd = Open("foo.txt", O_RDONLY, 0); /* Opens on file descriptor 3 */
+	dup(fd, STDIN_FILENO);	/* Closes STDIN_FILENO, and point to same entry as fd */
+	Execve("fstatcheck", argv, envp);
+}
+	\end{lstlisting}
+\end{sol}
+
+\end{document}
