@@ -1,0 +1,163 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Welcome to the MAT320 Homework template on Overleaf -- just edit your
+% LaTeX on the left, and we'll compile it for you on the right.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------
+% Based on a homework template by Dana Ernst.
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+
+\documentclass[12pt]{article}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{textcomp} % cent symbol, such as \textcent
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{cancel}
+\usepackage{mathtools} % ceiling function
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+% https://tex.stackexchange.com/questions/146306/how-to-make-horizontal-lists
+\usepackage[inline]{enumitem} % allows using letters in enumerate list environment
+
+% source: https://stackoverflow.com/questions/3175105/inserting-code-in-this-latex-document-with-indentation
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C, % language for code listing
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{ex}[2][Exercise]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{sol}[1][Solution]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1:}]}{\end{trivlist}}
+
+
+\begin{document}
+
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\noindent Sergio Garcia Tapia \hfill
+
+\noindent{\small Computer Systems: A Programmer's Perspective, by Bryant and O'Hallaron} \hfill
+
+\noindent{\small Chapter 11: Network Programming}
+
+\noindent\today
+
+\subsection*{Practice Problems}
+
+\begin{ex}{11.1}
+	Complete the following table:
+	\begin{center}
+		\begin{tabular}{cc}
+			Hex address & Dotted-decimal address \\
+			\hline
+			\texttt{0x0} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0xffffffff} & \makebox[1cm]{\hrulefill} \\
+			\texttt{0x7f000001} & \makebox[1cm]{\hrulefill} \\
+			\makebox[1cm]{\hrulefill} & \texttt{205.188.160.121}\\
+			\makebox[1cm]{\hrulefill} & \texttt{64.12.149.13}\\
+			\makebox[1cm]{\hrulefill} & \texttt{205.188.146.23}\\
+		\end{tabular}
+	\end{center}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{center}
+		\begin{tabular}{cc}
+			Hex address & Dotted-decimal address \\
+			\hline
+			\texttt{0x0} & \texttt{0.0.0.0} \\
+			\texttt{0xffffffff} & \texttt{255.255.255.255} \\
+			\texttt{0x7f000001} & \texttt{127.0.0.1} \\
+			\texttt{0xcdbca079} & \texttt{205.188.160.121}\\
+			\texttt{0x400c950d} & \texttt{64.12.149.13}\\
+			\texttt{0xcdbc9317} & \texttt{205.188.146.23}\\
+		\end{tabular}
+	\end{center}
+\end{sol}
+
+\begin{ex}{11.2}
+	Write a program \texttt{hex2dd.c} that converts its hex argument to a dotted-decimal
+	string and prints the results. For example,
+	\begin{lstlisting}[language={}]
+linux> ./hex2dd 0x8002c2f2
+128.2.194.242
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	My approach was to read the hexadecimal number, the use \texttt{strtol} to with a base
+	of 16 as the third argument to parse it as a hexadecimal number in host byte order. I 
+	then proceeded to use \texttt{htonl} to convert this from host byte order to network
+	byte order and stored it in a variable. I used the address-of operator \texttt{\&} to get
+	the pointer to this integer IP address and cast the variable to an \texttt{unsigned char *}
+	to interpret it s a pointer to characters, where each character is a byte representation
+	of the input number. Finally, I used \texttt{inet\_ntop} to convert it to a dotted-decimal
+	string. Notice that the book instead relied on \texttt{sscanf} instead of \texttt{strtol}
+	to parse the input. Moreover, the book used the \texttt{struct in\_addr} structure,
+	which is the correct data structure for the IP address.
+	
+	\
+	See my approach in \texttt{02-hex2dd/hex2dd.c}:
+	\lstinputlisting{02-hex2dd/hex2dd.c}
+\end{sol}
+
+\begin{ex}{11.3}
+	Write a program \texttt{dd2hex.c} that converts its dotted-decimal argument to a hex number
+	and prints the result. For example,
+	\begin{lstlisting}[language={}]
+linux> ./dd2hex 128.2.194.242
+0x8002c2f2
+	\end{lstlisting}
+\end{ex}
+
+\begin{sol}
+	\
+	This time I used \texttt{inet\_pton()} to parse the dotted-decimal format IP address,
+	and I stored the result in an \texttt{unsigned char []}. I then looped through the
+	resulting character array one byte at a time, and I used 4 iterations since an IPv4
+	address is made up of 4 bytes. I used the string format \texttt{\%02x} to have a
+	hex number with a width of 2 and adding 0s if necessary to pad to the full width.
+	This produced the desired output, but the better approach is done in the book, which
+	instead of an \texttt{unsigned char []}, they use the \texttt{struct in\_inaddr} structure
+	type, which is the correct way to interpret IP address as explained on Section 11.3.1.
+	Then looping was not necessary because the entire number can be printed at once by
+	using the format specifier \texttt{\%x}.
+	
+	\
+	See my implementation at \texttt{03-dd2hex/dd2hex.c}:
+	\lstinputlisting{03-dd2hex/dd2hex.c}
+\end{sol}
+
+\end{document}
