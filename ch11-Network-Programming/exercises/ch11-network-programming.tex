@@ -160,4 +160,33 @@ linux> ./dd2hex 128.2.194.242
 	\lstinputlisting{03-dd2hex/dd2hex.c}
 \end{sol}
 
+\begin{ex}{11.4}
+	The \texttt{getaddrinfo} and \texttt{getnameinfo} functions subsume the functionality of
+	\texttt{inet\_pton} and \texttt{inet\_ntop}, respectively, and they provide higher-level
+	of abstraction that is independent of any particular address format. To convince yourself
+	how handy this is, write a version of \emph{HOSTINFO} (Figure 11.7) that uses
+	\texttt{inet\_ntop} insted of \texttt{getnameinfo} to convert each socket address to a
+	dotted-decimal address string.
+\end{ex}
+
+\begin{sol}
+	\
+	See \texttt{04-hostinfo-inet\_ntop/hostinfo\_inet\_ntop.c}:
+	\lstinputlisting{04-hostinfo-inet_ntop/hostinfo_inet_ntop.c}
+\end{sol}
+
+\begin{ex}{11.5}
+	In Section 10.11, we warned you about the dangers of using the C standard I/O functions in
+	network applications. Yet, the CGI program in Figure 11.27 is able to use standard I/O
+	without any problems. Why?
+\end{ex}
+
+\begin{sol}
+	\
+	The example CGI program does not interleave reading from and writing to standard output;
+	it only writes standard output. Moreover, the program does not close any of its streams
+	explicitly; it is closed by the kernel when the child terminates. Thus there is no risk
+	of duplicate \texttt{close} calls failing.
+\end{sol}
+
 \end{document}
