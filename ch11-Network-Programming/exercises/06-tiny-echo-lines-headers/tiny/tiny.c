@@ -8,10 +8,12 @@
  */
 #include "csapp.h"
 
+#define MAX_HEADERS MAXLINE
+
 void doit(int fd);
-void read_requesthdrs(rio_t *rp);
+size_t read_requesthdrs(rio_t *rp, char *buf, size_t size);
 int parse_uri(char *uri, char *filename, char *cgiargs);
-void serve_static(int fd, char *filename, int filesize);
+void serve_static(int fd, char *filename, int filesize, size_t contentLength);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, 
@@ -51,24 +53,30 @@ void doit(int fd)
 {
     int is_static;
     struct stat sbuf;
-    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+	size_t requestLineSize, requestHeaderSize, requestLength;
+    char buf[MAXLINE + MAX_HEADERS], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
     char filename[MAXLINE], cgiargs[MAXLINE];
     rio_t rio;
 
-    /* Read request line and headers */
+    /* Read request line */
     Rio_readinitb(&rio, fd);
-    if (!Rio_readlineb(&rio, buf, MAXLINE))  //line:netp:doit:readrequest
-        return;
-	/* Echo all request lines */
+	if (!(requestLineSize = Rio_readlineb(&rio, buf, MAXLINE)))  //line:netp:doit:readrequest
+    	return;
+	
+	/* Display request line in stdout */
     printf("%s", buf);
-	/*
-	*/
+
+	/* Parse request line */
     sscanf(buf, "%s %s %s", method, uri, version);       //line:netp:doit:parserequest
     if (strcasecmp(method, "GET")) {                     //line:netp:doit:beginrequesterr
         clienterror(fd, method, "501", "Not Implemented",
                     "Tiny does not implement this method");
         return;
     }                                                    //line:netp:doit:endrequesterr
+
+	/* Read headers */
+    requestHeaderSize = read_requesthdrs(&rio, buf + requestLineSize, MAX_HEADERS); //line:netp:doit:readrequesthdrs
+	printf("%s", buf + requestLineSize);
 
     /* Parse URI from GET request */
     is_static = parse_uri(uri, filename, cgiargs);       //line:netp:doit:staticcheck
@@ -84,7 +92,9 @@ void doit(int fd)
 				"Tiny couldn't read the file");
 			return;
 		}
-		serve_static(fd, filename, sbuf.st_size);        //line:netp:doit:servestatic
+		requestLength = requestLineSize + requestHeaderSize;
+		serve_static(fd, filename, sbuf.st_size, requestLength + sbuf.st_size);        //line:netp:doit:servestatic
+		Rio_writen(fd, buf, requestLength);
     }
     else { /* Serve dynamic content */
 		if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) { //line:netp:doit:executable
@@ -94,8 +104,6 @@ void doit(int fd)
 		}
 		serve_dynamic(fd, filename, cgiargs);            //line:netp:doit:servedynamic
     }
-	Rio_writen(fd, buf, MAXLINE);
-    read_requesthdrs(&rio);                              //line:netp:doit:readrequesthdrs
 }
 /* $end doit */
 
@@ -103,17 +111,16 @@ void doit(int fd)
  * read_requesthdrs - read HTTP request headers
  */
 /* $begin read_requesthdrs */
-void read_requesthdrs(rio_t *rp) 
+size_t read_requesthdrs(rio_t *rp, char *buf, size_t size) 
 {
-    char buf[MAXLINE];
-
-    Rio_readlineb(rp, buf, MAXLINE);
-    printf("%s", buf);
-    while(strcmp(buf, "\r\n")) {          //line:netp:readhdrs:checkterm
-		Rio_readlineb(rp, buf, MAXLINE);
-		printf("%s", buf);
-    }
-    return;
+	size_t bytesRead = 0, remaining = size;
+	char *p = buf;
+	do {
+		p = buf + bytesRead;
+		bytesRead += Rio_readlineb(rp, p, remaining);
+		remaining -= bytesRead;
+	} while (remaining > 0 && strcmp(p, "\r\n") != 0);
+    return bytesRead;
 }
 /* $end read_requesthdrs */
 
@@ -152,7 +159,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
  * serve_static - copy a file back to the client 
  */
 /* $begin serve_static */
-void serve_static(int fd, char *filename, int filesize)
+void serve_static(int fd, char *filename, int filesize, size_t contentLength)
 {
     int srcfd;
     char *srcp, filetype[MAXLINE], buf[MAXBUF + MAXLINE];
@@ -163,7 +170,7 @@ void serve_static(int fd, char *filename, int filesize)
     Rio_writen(fd, buf, strlen(buf));
     sprintf(buf, "Server: Tiny Web Server\r\n");
     Rio_writen(fd, buf, strlen(buf));
-    sprintf(buf, "Content-length: %d\r\n", filesize);
+    sprintf(buf, "Content-length: %ld\r\n", contentLength);
     Rio_writen(fd, buf, strlen(buf));
     sprintf(buf, "Content-type: %s\r\n\r\n", filetype);
     Rio_writen(fd, buf, strlen(buf));    //line:netp:servestatic:endserve

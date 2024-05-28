@@ -14,11 +14,76 @@ www.rfc-editor.org/rfc.html
 
 ## Solution
 
-A. My understanding is that by echo every request line and request header, the
-exercise means to echo to standard out, not to serve it as part of the static
-and dynamic content. The program already does that, so no change was necessary.
-I did make some changes to address some compile-time warning that were output
-when running `make`.
+A. I began by making changes to ensure that `make` would run without any warnings.
+Then I proceeded to changing some function definitions. First, I defined a constant for
+the maximum size of a header that Tiny will accept:
+
+```c
+#define MAX_HEADERS MAXLINE
+```
+
+Then I increased the size of `buf` in the `doit()` function so that there is enough room
+for both the request line and the request headers, and declared variables to track their
+respective lengths:
+
+```c
+size_t requestLineSize, requestHeaderSize, requestLength;
+char buf[MAXLINE + MAX_HEADERS], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
+```
+
+I began by saving the size of the request line:
+
+```c
+/* Read request line */
+Rio_readinitb(&rio, fd);
+if (!(requestLineSize = Rio_readlineb(&rio, buf, MAXLINE)))
+    return;
+
+/* Display request line in stdout */
+printf("%s", buf);
+```
+Then I changed the `read_requesthdrs()` function's behavior. Before, it would just print all headers
+to standard output. Now I have changed its signature to accept a buffer, to which it will write the headers.
+It also returns the number of bytes written to the header. I moved the call to be after the logic that parses
+the requestline:
+
+```c
+/* Read headers */
+requestHeaderSize = read_requesthdrs(&rio, buf + requestLineSize, MAX_HEADERS); //line:netp:doit:readrequesthdrs
+printf("%s", buf + requestLineSize);
+```
+
+Then, in the branch that serves the static resource, I wrote the request line and header after having
+served the static page:
+
+```c
+requestLength = requestLineSize + requestHeaderSize;
+serve_static(fd, filename, sbuf.st_size, requestLength + sbuf.st_size);        //line:netp:doit:servestatic
+Rio_writen(fd, buf, requestLength);
+```
+
+Notice that I modified the `serve_static()` function to add an extra argument which I call `contentLength`.
+Before, the content length was just the file's size; now, it is the file's size plus the combined size of
+the request line and headers.
+
+The following is the updated `read_requesthdrs()` routine:
+
+```c
+size_t read_requesthdrs(rio_t *rp, char *buf, size_t size)
+{
+    size_t bytesRead = 0, remaining = size;
+    char *p = buf;
+    *p = '\0';
+    do {
+        p = buf + bytesRead;
+        bytesRead += Rio_readlineb(rp, p, remaining);
+        remaining -= bytesRead;
+    } while (remaining > 0 && strcmp(p, "\r\n") != 0);
+    return bytesRead;
+}
+```
+
+This correctly displayed the request headers in the browser for each valid request for static content.
 
 B. I ran the server as
 
