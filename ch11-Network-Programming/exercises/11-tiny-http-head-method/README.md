@@ -1,4 +1,4 @@
-# Exercise 11.10
+# Exercise 11.11
 
 Extend Tiny to support the HTTP HEAD method. Check your work using *Telnet* as a Web client.
 
