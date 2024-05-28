@@ -52,7 +52,7 @@ the request:
 		Dup2(fd, STDOUT_FILENO);         /* Redirect stdout to client */ //line:netp:servedynamic:dup2
 		Execve(filename, emptylist, environ); /* Run CGI program */ //line:netp:servedynamic:execve
     }
-	/* Removed Wait(NULL) that was here 8/
+	/* Removed Wait(NULL) that was here */
 ```
 
 Even though they main loop calls `Close(connfd)`, the CGI child, having inherited the descriptor,
