@@ -447,4 +447,49 @@
 	\end{enumerate}
 \end{sol}
 
+
+\begin{ex}{12.15}
+	Consider the following program, which attempts to use a pair of semaphores for mutual
+	exclusion:
+	\begin{lstlisting}[language={}]
+		Initially: s = 1, t = 0.
+		
+		Thread 1:			Thread 2:
+		P(s);				P(s);
+		V(s);				V(s);
+		P(t);				P(t);
+		V(t);				V(t);
+	\end{lstlisting}
+	\begin{enumerate}[label=(\alph*)]
+		\item Draw the progress graph for this program.
+		\item Does it always deadlock?
+		\item If so, what simple change to the initial semaphore values will eliminate the
+		potential for deadlock?
+		\item Draw the progress graph for the resulting deadlock-free program.
+	\end{enumerate}
+\end{ex}
+
+\begin{sol}
+	\
+	\begin{enumerate}[label=(\alph*)]
+		\item The progress graph is shown in Figure~\ref{fig:ex-12-15a}. Notice that
+		because $t=0$, as soon as both threads have unlocked the thread for $s$, they will
+		hang waiting for $t$ to be available, which will never be the case.
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.75\textwidth]{exercise-12-15-progress-graph-deadlock}
+			\caption{Exercise 12.15(a): Progress graph}
+			\label{fig:ex-12-15a}
+		\end{figure}
+		\item The program always deadlocks because $t=0$.
+		\item We can change $t$ to be 1 initially instead of 0.
+		\item The updated deadlock-free progress graph is in Figure~\ref{fig:ex-12-15b}.
+		\begin{figure}
+			\centering
+			\includegraphics[width=0.75\textwidth]{exercise-12-15-progress-graph-deadlock-free}
+			\caption{Exercise 12.15(a): Progress graph}
+			\label{fig:ex-12-15b}
+		\end{figure}
+	\end{enumerate}
+\end{sol}
 \end{document}
